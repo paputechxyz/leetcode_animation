@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>226. Invert Binary Tree — Recursion Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #treeSvg{width:100%;height:360px;display:block}
+  .edge{stroke:var(--gray);stroke-width:3}
+  .edge.on{stroke:var(--blue);stroke-width:5}
+  .edge.swap{stroke:var(--amber);stroke-width:5}
+  .edge.nulledge{stroke-dasharray:5 5;stroke-width:2;stroke:var(--amber)}
+  .elabel{font:700 11px sans-serif;text-anchor:middle;dominant-baseline:central}
+  .elabel.L{fill:#7c3aed}.elabel.R{fill:#0369a1}
+  .elabel.swap{font-size:13px}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3}
+  .node text{font-size:18px;font-weight:700;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.onstack circle{fill:var(--blue-soft);stroke:var(--blue)}
+  .node.done circle{fill:var(--green-soft);stroke:var(--green)}
+  .node.done text{fill:#166534}
+  .node.active circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
+  .node.swapped circle{stroke:var(--amber);stroke-dasharray:5 3;stroke-width:4}
+  .nullnode circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:3;stroke-dasharray:4 3}
+  .nullnode text{font-size:12px;fill:#b45309;text-anchor:middle;dominant-baseline:central}
+  .swapicon{font:700 20px sans-serif;fill:var(--amber);text-anchor:middle;dominant-baseline:central}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-active::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-stack::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-done::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-new::before{background:#fff;border-color:#94a3b8!important}
+  .lg-lr{color:var(--muted)}
+  .lg-lr::before{display:none!important}
+
+  pre.code{margin:0;font:13.5px/1.6 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.cm{color:#9ca3af}.bool{color:#c2410c}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.2fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;display:flex;justify-content:space-between;gap:12px}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .frame .st{font-weight:500;color:#a8a29e}
+  .frame .st b{color:#57534e}
+  .frame .st .ok{color:var(--green)}
+  .frame .st .run{color:var(--blue)}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .arrays{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center}
+  .arrays .k{font-size:13px;color:var(--muted)}
+  .cells{display:flex;flex-wrap:wrap;gap:4px}
+  .c{min-width:32px;height:32px;padding:0 6px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:2px solid var(--line);font:700 14px Menlo,monospace;background:#fff}
+  .c.null{color:#c0b9ae;font-weight:400;font-size:11px}
+  .c.diff{background:var(--amber-soft);border-color:var(--amber)}
+  .answer{margin-top:12px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:280px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>226. Invert Binary Tree — swap, then recurse</h1>
+  <p>At every node, <b>swap its left and right children</b>, then do the same inside each child. When every node has been swapped, the whole tree is a mirror image.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Tree</h2>
+    <svg id="treeSvg"></svg>
+    <div class="legend">
+      <span class="lg-new">not visited yet</span>
+      <span class="lg-active">current call</span>
+      <span class="lg-stack">waiting on a child call</span>
+      <span class="lg-done">subtree fully inverted</span>
+      <span class="lg-lr"><b style="color:#7c3aed">L</b> / <b style="color:#0369a1">R</b> = which side a child is on</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>Why does this work?</b> Mirroring a tree = the mirrored right subtree goes on the left, and the mirrored left subtree goes on the right.
+      Swapping first and then recursing into both children does exactly that, one level at a time.<br>
+      <b>Swap is one line in Python:</b> <code>a, b = b, a</code> evaluates the right side first, so no temp variable is needed.<br>
+      <b>Leaves</b> swap <code>None ⇄ None</code> (no visible change) and their two <code>invertTree(None)</code> calls return immediately.
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel"><h2>Tree as a level-order list</h2><div class="arrays" id="arrays"></div><div id="answer"></div></div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1700">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="600">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">root (level order):</label>
+    <input type="text" id="input" value="[4,2,7,1,null,6,9,null,5]">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="[4,2,7,1,3,6,9]">LeetCode #1 (→ [4,7,2,9,6,3,1])</button>
+    <button class="preset" data-t="[2,1,3]">LeetCode #2 (→ [2,3,1])</button>
+    <button class="preset" data-t="[]">LeetCode #3 (→ [])</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">invertTree</span>(self, root):`,
+  `    <span class="kw">if not</span> root:`,
+  `        <span class="kw">return</span> <span class="bool">None</span>`,
+  `    root.left, root.right = root.right, root.left`,
+  `    self.<span class="fn">invertTree</span>(root.left)`,
+  `    self.<span class="fn">invertTree</span>(root.right)`,
+  `    <span class="kw">return</span> root`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+// Tree model: vals[id], kids[id] = [leftId|null, rightId|null]; root is id 0.
+let vals = [], kids0 = [], inputList = [], steps = [], idx = 0, timer = null;
+
+function parse(str) {
+  const arr = JSON.parse(str.trim().startsWith('[') ? str : '[' + str + ']');
+  if (!Array.isArray(arr) || arr.some(v => v !== null && !Number.isFinite(v))) throw new Error('expected a list of numbers / null');
+  return arr;
+}
+
+function buildTree(list) {
+  vals = []; kids0 = [];
+  if (!list.length || list[0] === null) return;
+  const mk = v => { vals.push(v); kids0.push([null, null]); return vals.length - 1; };
+  const q = [mk(list[0])]; let i = 1;
+  while (q.length && i < list.length) {
+    const n = q.shift();
+    if (i < list.length && list[i] !== null) { kids0[n][0] = mk(list[i]); q.push(kids0[n][0]); } i++;
+    if (i < list.length && list[i] !== null) { kids0[n][1] = mk(list[i]); q.push(kids0[n][1]); } i++;
+  }
+}
+
+function levelOrder(kids) {
+  if (!vals.length) return [];
+  const out = [], q = [0];
+  while (q.length) {
+    const id = q.shift();
+    if (id === null) { out.push(null); continue; }
+    out.push(vals[id]); q.push(kids[id][0], kids[id][1]);
+  }
+  while (out.length && out[out.length - 1] === null) out.pop();
+  return out;
+}
+
+function simulate() {
+  const out = [], stack = [], done = new Set();
+  const kids = kids0.map(k => [...k]);
+  const lab = id => id === null ? 'None' : `<b>${vals[id]}</b>`;
+  const snap = (line, msg, extra = {}) => out.push({
+    line, msg, kids: kids.map(k => [...k]), stack: stack.map(f => ({...f})), done: new Set(done), ...extra
+  });
+
+  snap(1, `Call <b>invertTree(${vals.length ? vals[0] : 'None'})</b> on the root.`);
+
+  function inv(id, parent, side) {
+    if (id === null) {
+      stack.push({id: null, label: 'None'});
+      snap(2, parent === null ? `<b>root</b> is None — the tree is empty.`
+        : `<b>invertTree(None)</b>: ${vals[parent]} has no ${side} child. Is root None? Yes…`, {nullCall: parent === null ? null : {parent, side}});
+      snap(3, `…so return <b>None</b>. Nothing to invert here.`, {nullCall: parent === null ? null : {parent, side}});
+      stack.pop();
+      return;
+    }
+    const f = {id, label: vals[id], swapped: false, left: '', right: ''};
+    stack.push(f);
+    snap(2, `<b>invertTree(${vals[id]})</b>: root is not None, keep going.`);
+
+    const [l, r] = kids[id];
+    kids[id] = [r, l];
+    f.swapped = true;
+    snap(4, (l === null && r === null)
+      ? `Swap ${vals[id]}'s children: None ⇄ None. It's a leaf, so nothing visibly changes.`
+      : `<b>Swap</b> ${vals[id]}'s children: left ${lab(l)} ⇄ right ${lab(r)}. Now left = ${lab(r)}, right = ${lab(l)} — the subtrees move as whole units.`,
+      {swapAt: id});
+
+    f.left = 'run';
+    snap(5, `Recurse into the <b>new left</b> child: <b>invertTree(${kids[id][0] === null ? 'None' : vals[kids[id][0]]})</b>.`);
+    inv(kids[id][0], id, 'left');
+    f.left = 'ok';
+
+    f.right = 'run';
+    snap(6, `Back in invertTree(${vals[id]}), left side done. Recurse into the <b>new right</b> child: <b>invertTree(${kids[id][1] === null ? 'None' : vals[kids[id][1]]})</b>.`);
+    inv(kids[id][1], id, 'right');
+    f.right = 'ok';
+
+    done.add(id);
+    snap(7, `Both subtrees of <b>${vals[id]}</b> are inverted → return node ${vals[id]}.`);
+    stack.pop();
+  }
+
+  inv(vals.length ? 0 : null, null, null);
+  snap(0, vals.length
+    ? `Done! Every node has swapped its children, so the tree is mirrored. Return the root (<b>${vals[0]}</b>).`
+    : `Done! Return <b>None</b> for the empty tree.`, {final: true});
+  return out;
+}
+
+// ---------- layout + animated drawing ----------
+const W = 620, H = 360;
+function layout(kids) {
+  const pos = {};
+  if (!vals.length) return pos;
+  let x = 0, maxD = 0;
+  const depth = {};
+  (function walk(id, d) {
+    if (id === null) return;
+    walk(kids[id][0], d + 1);
+    pos[id] = {xi: x++}; depth[id] = d; maxD = Math.max(maxD, d);
+    walk(kids[id][1], d + 1);
+  })(0, 0);
+  const padX = 45, padY = 40;
+  const colW = x <= 1 ? 0 : (W - 2 * padX) / (x - 1);
+  const rowH = maxD === 0 ? 0 : (H - 2 * padY - 30) / maxD;
+  for (const id in pos) {
+    pos[id].x = x <= 1 ? W / 2 : padX + pos[id].xi * colW;
+    pos[id].y = maxD === 0 ? H / 2 : padY + depth[id] * rowH;
+  }
+  pos.gap = Math.max(rowH, 60) * 0.6;
+  pos.dx = Math.max(24, Math.min(colW * 0.5, 40));
+  return pos;
+}
+
+function draw(s, pos) {
+  const svg = document.getElementById('treeSvg');
+  if (!vals.length) {
+    svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" fill="#a8a29e" font-size="18">empty tree (root = None)</text>`;
+    return;
+  }
+  const onStack = new Set(s.stack.filter(f => f.id !== null).map(f => f.id));
+  const top = s.stack[s.stack.length - 1];
+  const activeId = top && top.id !== null ? top.id : null;
+  let html = '';
+  s.kids.forEach(([l, r], p) => [[l, 'L'], [r, 'R']].forEach(([c, side]) => {
+    if (c === null) return;
+    const a = pos[p], b = pos[c];
+    const swap = s.swapAt === p;
+    const on = onStack.has(p) && onStack.has(c);
+    html += `<line class="edge ${swap ? 'swap' : on ? 'on' : ''}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;
+    const lx = a.x + (b.x - a.x) * 0.45 + (side === 'L' ? -10 : 10), ly = a.y + (b.y - a.y) * 0.45 - 6;
+    html += `<text class="elabel ${side} ${swap ? 'swap' : ''}" x="${lx}" y="${ly}">${side}</text>`;
+  }));
+  if (s.nullCall) {
+    const p = pos[s.nullCall.parent];
+    const gx = p.x + (s.nullCall.side === 'left' ? -pos.dx : pos.dx), gy = p.y + pos.gap;
+    html += `<line class="edge nulledge" x1="${p.x}" y1="${p.y}" x2="${gx}" y2="${gy}"/>`;
+    html += `<g class="nullnode"><circle cx="${gx}" cy="${gy}" r="13"/><text x="${gx}" y="${gy}">∅</text></g>`;
+  }
+  vals.forEach((v, id) => {
+    const p = pos[id];
+    let cls = '';
+    if (id === activeId) cls = 'active';
+    else if (s.done.has(id)) cls = 'done';
+    else if (onStack.has(id)) cls = 'onstack';
+    if (s.swapAt !== undefined && s.kids[s.swapAt].includes(id) && id !== activeId) cls += ' swapped';
+    html += `<g class="node ${cls}"><circle cx="${p.x}" cy="${p.y}" r="22"/><text x="${p.x}" y="${p.y}">${v}</text></g>`;
+  });
+  if (s.swapAt !== undefined && s.kids[s.swapAt].some(c => c !== null)) {
+    const p = pos[s.swapAt];
+    html += `<text class="swapicon" x="${p.x}" y="${p.y + 38}">⇄</text>`;
+  }
+  svg.innerHTML = html;
+}
+
+let disp = null, animId = null;
+function showTree(s, animate) {
+  const target = layout(s.kids);
+  if (animId) cancelAnimationFrame(animId), animId = null;
+  if (!animate || !disp || typeof requestAnimationFrame === 'undefined') { disp = target; draw(s, target); return; }
+  const from = disp, t0 = performance.now(), dur = 550;
+  const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+  const tick = now => {
+    const k = ease(Math.min(1, (now - t0) / dur));
+    const cur = {gap: target.gap, dx: target.dx};
+    vals.forEach((_, id) => {
+      const a = from[id] || target[id], b = target[id];
+      cur[id] = {x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k};
+    });
+    disp = cur;
+    draw(s, cur);
+    if (k < 1) animId = requestAnimationFrame(tick); else { animId = null; disp = target; }
+  };
+  animId = requestAnimationFrame(tick);
+}
+
+function cells(list, ref) {
+  if (!list.length) return '<span class="empty">[]</span>';
+  return '<div class="cells">' + list.map((v, i) =>
+    `<span class="c ${v === null ? 'null' : ''} ${ref && ref[i] !== v ? 'diff' : ''}">${v === null ? 'null' : v}</span>`).join('') + '</div>';
+}
+
+function render(animate = true) {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, i) => d.classList.toggle('hl', i + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+  showTree(s, animate);
+
+  const stEl = document.getElementById('stack');
+  const st = v => v === 'ok' ? '<span class="ok">✓</span>' : v === 'run' ? '<span class="run">…</span>' : '·';
+  stEl.innerHTML = s.stack.length
+    ? s.stack.map((f, i) => `<div class="frame ${i === s.stack.length - 1 ? 'top' : ''}"><span>invertTree(${f.label})</span>` +
+        (f.id === null ? '<span class="st">→ return None</span>'
+          : `<span class="st">swap ${f.swapped ? '<span class="ok">✓</span>' : '·'} · left ${st(f.left)} · right ${st(f.right)}</span>`) + '</div>').join('')
+    : '<span class="empty">no active calls</span>';
+
+  const now = levelOrder(s.kids);
+  document.getElementById('arrays').innerHTML =
+    `<span class="k">input</span>${cells(inputList)}<span class="k">now</span>${cells(now, inputList)}`;
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${JSON.stringify(now)}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(i, animate = true) { idx = Math.max(0, Math.min(steps.length - 1, i)); render(animate); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0, false);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  let list;
+  try { list = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>[4,2,7,1,null,6,9]</code>.`;
+    return;
+  }
+  buildTree(list);
+  inputList = levelOrder(kids0);
+  steps = simulate();
+  disp = null;
+  document.getElementById('slider').max = steps.length - 1;
+  go(0, false);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0, false); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value, false); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
