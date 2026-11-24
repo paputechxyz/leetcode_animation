@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>257. Binary Tree Paths — DFS + Backtracking Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #treeSvg{width:100%;height:340px;display:block}
+  .edge{stroke:var(--gray);stroke-width:3;transition:stroke .3s,stroke-width .3s}
+  .edge.on{stroke:var(--blue);stroke-width:5}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font-size:18px;font-weight:700;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.onpath circle{fill:var(--blue-soft);stroke:var(--blue)}
+  .node.done circle{fill:var(--gray-soft);stroke:var(--gray)}
+  .node.done text{fill:#94a3b8}
+  .node.active circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
+  .node.leafhit circle{fill:var(--green-soft);stroke:var(--green);stroke-width:5}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-active::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-path::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-leaf::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-done::before{background:var(--gray-soft);border-color:var(--gray)!important}
+  .lg-new::before{background:#fff;border-color:#94a3b8!important}
+
+  pre.code{margin:0;font:13.5px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.str{color:#15803d}.cm{color:#9ca3af}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.3fr .8fr 1.2fr;gap:18px}
+  .chips{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:42px}
+  .chip{padding:6px 12px;border-radius:8px;background:var(--blue-soft);border:2px solid var(--blue);font-weight:700;font-family:Menlo,monospace;animation:pop .25s}
+  .arrow{color:var(--muted);font-family:Menlo,monospace}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .paths{display:flex;flex-direction:column;gap:6px;min-height:42px}
+  .path{font-family:Menlo,monospace;font-size:14px;padding:6px 10px;border-radius:6px;background:#f0fdf4;border:1px solid #bbf7d0}
+  .path.new{background:var(--green-soft);border:2px solid var(--green);font-weight:700;animation:pop .35s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:230px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>257. Binary Tree Paths — DFS with backtracking</h1>
+  <p>Walk the tree depth-first. <b>current</b> grows as we go down, records a path at every leaf, and shrinks (<code>pop</code>) as we come back up.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Tree</h2>
+    <svg id="treeSvg"></svg>
+    <div class="legend">
+      <span class="lg-new">not visited</span>
+      <span class="lg-active">current call</span>
+      <span class="lg-path">in <code>current</code></span>
+      <span class="lg-leaf">leaf → path recorded</span>
+      <span class="lg-done">finished (popped)</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code</h2>
+    <pre class="code" id="code"></pre>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2><code>current</code> (the path so far)</h2><div class="chips" id="cur"></div></div>
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel"><h2><code>paths</code> (answer)</h2><div class="paths" id="paths"></div></div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1600">Slow</option>
+      <option value="1000" selected>Normal</option>
+      <option value="500">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">Tree (level order):</label>
+    <input type="text" id="treeInput" value="1,2,3,4,5,null,6">
+    <button id="build">Build tree</button>
+    <span class="hint">Try <code>1,2,3,null,5</code> (LeetCode example) · keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">binaryTreePaths</span>(self, root):`,
+  `    <span class="kw">if not</span> root:`,
+  `        <span class="kw">return</span> []`,
+  `    paths = []`,
+  `    current = []`,
+  `    <span class="kw">def</span> <span class="fn">dfs</span>(node):`,
+  `        current.append(str(node.val))`,
+  `        <span class="kw">if not</span> node.left <span class="kw">and not</span> node.right:`,
+  `            paths.append(<span class="str">"->"</span>.join(current))`,
+  `        <span class="kw">else</span>:`,
+  `            <span class="kw">if</span> node.left:`,
+  `                dfs(node.left)`,
+  `            <span class="kw">if</span> node.right:`,
+  `                dfs(node.right)`,
+  `        current.pop()  <span class="cm"># backtrack</span>`,
+  `    dfs(root)`,
+  `    <span class="kw">return</span> paths`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let nodes = [], root = null, steps = [], idx = 0, timer = null;
+
+function buildTree(str) {
+  const toks = str.split(',').map(s => s.trim()).filter(s => s.length);
+  nodes = [];
+  if (!toks.length || toks[0] === 'null') return null;
+  const mk = v => { const n = {id: nodes.length, val: v, left: null, right: null}; nodes.push(n); return n; };
+  const r = mk(toks[0]);
+  const q = [r]; let i = 1;
+  while (q.length && i < toks.length) {
+    const n = q.shift();
+    if (i < toks.length && toks[i] !== 'null') { n.left = mk(toks[i]); q.push(n.left); } i++;
+    if (i < toks.length && toks[i] !== 'null') { n.right = mk(toks[i]); q.push(n.right); } i++;
+  }
+  return r;
+}
+
+function layout(r) {
+  let x = 0, maxD = 0;
+  (function walk(n, d) {
+    if (!n) return;
+    walk(n.left, d + 1);
+    n.x = x++; n.d = d; maxD = Math.max(maxD, d);
+    walk(n.right, d + 1);
+  })(r, 0);
+  const W = 600, H = 340, pad = 36;
+  nodes.forEach(n => {
+    n.px = x <= 1 ? W / 2 : pad + n.x * (W - 2 * pad) / (x - 1);
+    n.py = maxD === 0 ? H / 2 : pad + n.d * (H - 2 * pad) / maxD;
+  });
+  document.getElementById('treeSvg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function simulate(r) {
+  const out = [], cur = [], paths = [], stack = [], done = new Set();
+  const vals = ids => ids.map(id => nodes[id].val);
+  const fmt = ids => '[' + vals(ids).map(v => `"${v}"`).join(', ') + ']';
+  const snap = (line, msg, extra = {}) => out.push({
+    line, msg, cur: [...cur], paths: [...paths], stack: [...stack], done: new Set(done), ...extra
+  });
+
+  snap(2, r ? 'Is <b>root</b> empty? No — keep going.' : '<b>root</b> is None.');
+  if (!r) { snap(3, 'Empty tree → return <b>[]</b>.'); return out; }
+  snap(4, 'Create <b>paths = []</b> — this collects the final answers.');
+  snap(5, 'Create <b>current = []</b> — the path from root to the node we are on.');
+  snap(16, `Start the DFS at the root: <b>dfs(${r.val})</b>.`);
+
+  (function dfs(n) {
+    stack.push(n.id);
+    cur.push(n.id);
+    snap(7, `Enter <b>dfs(${n.val})</b>: append "${n.val}" → current = ${fmt(cur)}`);
+    const leaf = !n.left && !n.right;
+    if (leaf) {
+      snap(8, `<b>${n.val}</b> has no left and no right child → it's a <b>leaf</b>!`, {leafCheck: true});
+      paths.push(vals(cur).join('->'));
+      snap(9, `Join current with "->" and save it: <b>${paths[paths.length - 1]}</b>`, {newPath: true, leafHit: n.id});
+    } else {
+      snap(8, `<b>${n.val}</b> has children → not a leaf, keep exploring.`);
+      if (n.left) {
+        snap(11, `${n.val} has a left child (<b>${n.left.val}</b>).`);
+        snap(12, `Go down-left: call <b>dfs(${n.left.val})</b>.`);
+        dfs(n.left);
+        snap(11, `Back in <b>dfs(${n.val})</b> — left subtree done. current = ${fmt(cur)}`);
+      } else {
+        snap(11, `${n.val} has no left child — skip.`);
+      }
+      if (n.right) {
+        snap(13, `${n.val} has a right child (<b>${n.right.val}</b>).`);
+        snap(14, `Go down-right: call <b>dfs(${n.right.val})</b>.`);
+        dfs(n.right);
+        snap(13, `Back in <b>dfs(${n.val})</b> — right subtree done. current = ${fmt(cur)}`);
+      } else {
+        snap(13, `${n.val} has no right child — skip.`);
+      }
+    }
+    cur.pop(); done.add(n.id);
+    snap(15, `<b>Backtrack</b>: pop "${n.val}" → current = ${fmt(cur)}. dfs(${n.val}) returns.`);
+    stack.pop();
+  })(r);
+
+  snap(17, `DFS finished. Return <b>${paths.length}</b> path${paths.length === 1 ? '' : 's'}.`, {final: true});
+  return out;
+}
+
+function render() {
+  const s = steps[idx];
+  // code
+  [...codeEl.children].forEach((d, i) => d.classList.toggle('hl', i + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  // tree
+  const svg = document.getElementById('treeSvg');
+  const onPath = new Set(s.cur);
+  const active = s.stack.length ? s.stack[s.stack.length - 1] : null;
+  let html = '';
+  nodes.forEach(n => [n.left, n.right].forEach(c => {
+    if (!c) return;
+    const on = onPath.has(n.id) && onPath.has(c.id);
+    html += `<line class="edge ${on ? 'on' : ''}" x1="${n.px}" y1="${n.py}" x2="${c.px}" y2="${c.py}"/>`;
+  }));
+  nodes.forEach(n => {
+    let cls = '';
+    if (s.leafHit === n.id || (s.leafCheck && n.id === active)) cls = 'leafhit';
+    else if (n.id === active && !s.done.has(n.id)) cls = 'active';
+    else if (onPath.has(n.id)) cls = 'onpath';
+    else if (s.done.has(n.id)) cls = 'done';
+    html += `<g class="node ${cls}"><circle cx="${n.px}" cy="${n.py}" r="22"/><text x="${n.px}" y="${n.py}">${n.val}</text></g>`;
+  });
+  svg.innerHTML = html;
+
+  // current
+  const curEl = document.getElementById('cur');
+  curEl.innerHTML = s.cur.length
+    ? s.cur.map((id, i) => (i ? '<span class="arrow">→</span>' : '') + `<span class="chip">"${nodes[id].val}"</span>`).join('')
+    : '<span class="empty">[] empty</span>';
+
+  // stack
+  const stEl = document.getElementById('stack');
+  stEl.innerHTML = s.stack.length
+    ? s.stack.map((id, i) => `<div class="frame ${i === s.stack.length - 1 ? 'top' : ''}">dfs(${nodes[id].val})</div>`).join('')
+    : '<span class="empty">no active calls</span>';
+
+  // paths
+  const pEl = document.getElementById('paths');
+  pEl.innerHTML = s.paths.length
+    ? s.paths.map((p, i) => `<div class="path ${s.newPath && i === s.paths.length - 1 ? 'new' : ''}">"${p}"</div>`).join('')
+    : '<span class="empty">[] none yet</span>';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(i) { idx = Math.max(0, Math.min(steps.length - 1, i)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  root = buildTree(document.getElementById('treeInput').value);
+  layout(root);
+  steps = simulate(root);
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.getElementById('treeInput').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
