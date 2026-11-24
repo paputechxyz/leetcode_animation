@@ -42,6 +42,12 @@
   .kw{color:#7c3aed}.fn{color:#0369a1}.str{color:#15803d}.cm{color:#9ca3af}
 
   .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
   .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.3fr .8fr 1.2fr;gap:18px}
   .chips{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:42px}
   .chip{padding:6px 12px;border-radius:8px;background:var(--blue-soft);border:2px solid var(--blue);font-weight:700;font-family:Menlo,monospace;animation:pop .25s}
@@ -89,6 +95,12 @@
   <div class="panel">
     <h2>Code</h2>
     <pre class="code" id="code"></pre>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n·h)</span>
+        <span class="cxw">Each node is visited once, which is O(n). Each leaf also joins its path into a string, costing O(h), the tree's height. In the worst case (many leaves, all deep) that's O(n²).</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(h)</span>
+        <span class="cxw">The recursion stack and <code>current</code> both hold at most one root-to-leaf path: O(log n) when balanced, O(n) for a chain. The output list is not counted.</span></div>
+    </div>
   </div>
 
   <div class="bottom">

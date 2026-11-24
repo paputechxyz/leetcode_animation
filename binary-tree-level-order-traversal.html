@@ -49,6 +49,12 @@
 
   .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
   .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
   .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.35fr 1fr;gap:18px}
 
   .queue{display:flex;align-items:center;gap:6px;min-height:52px;flex-wrap:wrap}
@@ -116,6 +122,12 @@
       <b>Why <code>range(len(queue))</code>?</b> It's evaluated <b>once</b>, before the loop starts. At that moment the queue holds exactly
       the current level. Children appended during the loop don't change the count, so they wait for the next round.<br>
       <b>Why a deque?</b> <code>popleft()</code> is O(1); <code>list.pop(0)</code> would be O(n).
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n)</span>
+        <span class="cxw">Every node is appended to the queue once and popped once, and <code>deque.popleft()</code> is O(1).</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(w)</span>
+        <span class="cxw">The queue holds at most about two levels' worth of nodes, where w is the widest level. A full tree's bottom level has about n/2 nodes, so the worst case is O(n). The output list is not counted.</span></div>
     </div>
   </div>
 
