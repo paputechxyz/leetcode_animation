@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>199. Binary Tree Right Side View — DFS Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #treeSvg{width:100%;height:380px;display:block}
+  .band{fill:transparent}
+  .band.cur{fill:#fffbeb}
+  .bandlabel{font:600 11px sans-serif;fill:#c0b9ae}
+  .bandlabel.cur{fill:#b45309}
+  .edge{stroke:var(--gray);stroke-width:3}
+  .edge.on{stroke:var(--blue);stroke-width:5}
+  .edge.nulledge{stroke-dasharray:5 5;stroke-width:2;stroke:var(--amber)}
+  .sight{stroke:var(--green);stroke-width:2;stroke-dasharray:6 5;opacity:.7}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font-size:18px;font-weight:700;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.onstack circle{fill:var(--blue-soft);stroke:var(--blue)}
+  .node.seen circle{fill:var(--green-soft);stroke:var(--green);stroke-width:4}
+  .node.seen text{fill:#166534}
+  .node.hidden circle{fill:var(--gray-soft);stroke:var(--gray)}
+  .node.hidden text{fill:#94a3b8}
+  .node.active circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
+  .nullnode circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:3;stroke-dasharray:4 3}
+  .nullnode text{font-size:12px;fill:#b45309;text-anchor:middle;dominant-baseline:central}
+  .vbox{fill:#fff;stroke:#d6d3d1;stroke-width:2;stroke-dasharray:4 3}
+  .vbox.filled{fill:var(--green-soft);stroke:var(--green);stroke-dasharray:none}
+  .vbox.check{stroke:var(--amber);stroke-width:3}
+  .vtext{font:700 16px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:#166534}
+  .vtext.empty{fill:#c0b9ae;font-size:12px;font-weight:500}
+  .eye{font:600 11px sans-serif;fill:var(--muted);text-anchor:middle}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-active::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-stack::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-seen::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-hidden::before{background:var(--gray-soft);border-color:var(--gray)!important}
+  .lg-new::before{background:#fff;border-color:#94a3b8!important}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;display:flex;justify-content:space-between;gap:12px}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .frame .st{font-weight:500;color:#a8a29e}
+  .frame .st .ok{color:var(--green)}
+  .frame .st .run{color:var(--blue)}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .rarr{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;min-height:56px}
+  .rc{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .rc .ix{font:11px Menlo,monospace;color:var(--muted)}
+  .rc .v{min-width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 16px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green)}
+  .rc.new .v{animation:pop .35s;box-shadow:0 0 0 4px #bbf7d0}
+  .rc.slot .v{background:#fff;border:2px dashed var(--amber);color:#b45309;font-size:12px;font-weight:500}
+  .cmp{margin-top:12px;font-size:14px;font-family:Menlo,monospace;padding:8px 10px;border-radius:8px;background:#faf8f4}
+  .cmp .yes{color:var(--green);font-weight:700}
+  .cmp .no{color:#78716c;font-weight:700}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:280px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>199. Binary Tree Right Side View — DFS, right child first</h1>
+  <p>Visit the <b>right</b> child before the left. Then the <b>first</b> node reached at each depth is the rightmost one, the one you'd see standing to the right of the tree.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Tree <span style="text-transform:none;letter-spacing:0">(boxes on the right = what you see from the right side)</span></h2>
+    <svg id="treeSvg"></svg>
+    <div class="legend">
+      <span class="lg-new">not visited yet</span>
+      <span class="lg-active">current call</span>
+      <span class="lg-stack">waiting on a child call</span>
+      <span class="lg-seen">visible: first at its depth → appended</span>
+      <span class="lg-hidden">hidden behind a node to its right</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>The trick is <code>depth == len(result)</code>.</b> <code>result</code> has one entry per depth already seen, so
+      <code>len(result)</code> is the first depth with no entry yet. If the current node's depth equals it, this is the
+      <b>first</b> node reached at this depth.<br>
+      <b>Why first = rightmost:</b> because <code>dfs(node.right)</code> runs before <code>dfs(node.left)</code>, every node
+      further right at the same depth is visited earlier. Later nodes at that depth are hidden behind it.<br>
+      <b>Left nodes can still show up</b> if nothing on the right reaches that deep.
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel"><h2><code>result</code> (index = depth)</h2><div class="rarr" id="result"></div><div id="cmp"></div><div id="answer"></div></div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1600">Slow</option>
+      <option value="1000" selected>Normal</option>
+      <option value="500">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">root (level order):</label>
+    <input type="text" id="input" value="[1,2,3,4,5,null,6,7]">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="[1,2,3,null,5,null,4]">#1 (→ [1,3,4])</button>
+    <button class="preset" data-t="[1,2,3,4,null,null,null,5]">#2 (→ [1,3,4,5])</button>
+    <button class="preset" data-t="[1,null,3]">#3 (→ [1,3])</button>
+    <button class="preset" data-t="[]">#4 (→ [])</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">class</span> <span class="ty">Solution</span>:`,
+  `    <span class="kw">def</span> <span class="fn">rightSideView</span>(self, root: <span class="ty">TreeNode</span> | <span class="bool">None</span>) -> <span class="ty">list</span>[<span class="ty">int</span>]:`,
+  `        result = []`,
+  ``,
+  `        <span class="kw">def</span> <span class="fn">dfs</span>(node: <span class="ty">TreeNode</span> | <span class="bool">None</span>, depth: <span class="ty">int</span>) -> <span class="bool">None</span>:`,
+  `            <span class="kw">if not</span> node:`,
+  `                <span class="kw">return</span>`,
+  `            <span class="kw">if</span> depth == len(result):`,
+  `                result.append(node.val)`,
+  `            dfs(node.right, depth + 1)`,
+  `            dfs(node.left, depth + 1)`,
+  ``,
+  `        dfs(root, 0)`,
+  `        <span class="kw">return</span> result`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let nodes = [], steps = [], idx = 0, timer = null, maxDepth = 0, rowH = 0;
+
+function parse(str) {
+  const arr = JSON.parse(str.trim().startsWith('[') ? str : '[' + str + ']');
+  if (!Array.isArray(arr) || arr.some(v => v !== null && !Number.isFinite(v))) throw new Error('expected a list of numbers / null');
+  return arr;
+}
+
+function buildTree(list) {
+  nodes = [];
+  if (!list.length || list[0] === null) return null;
+  const mk = v => { const n = {id: nodes.length, val: v, left: null, right: null}; nodes.push(n); return n; };
+  const r = mk(list[0]);
+  const q = [r]; let i = 1;
+  while (q.length && i < list.length) {
+    const n = q.shift();
+    if (i < list.length && list[i] !== null) { n.left = mk(list[i]); q.push(n.left); } i++;
+    if (i < list.length && list[i] !== null) { n.right = mk(list[i]); q.push(n.right); } i++;
+  }
+  return r;
+}
+
+const W = 640, H = 380, PADY = 46, VX = W - 34;
+function layout(r) {
+  let x = 0; maxDepth = 0;
+  (function walk(n, d) {
+    if (!n) return;
+    walk(n.left, d + 1);
+    n.x = x++; n.d = d; maxDepth = Math.max(maxDepth, d);
+    walk(n.right, d + 1);
+  })(r, 0);
+  const left = 78, right = W - 110;
+  const colW = x <= 1 ? 0 : (right - left) / (x - 1);
+  rowH = maxDepth === 0 ? 0 : (H - PADY - 30) / maxDepth;
+  nodes.forEach(n => {
+    n.px = x <= 1 ? (left + right) / 2 : left + n.x * colW;
+    n.py = maxDepth === 0 ? H / 2 : PADY + n.d * rowH;
+  });
+  document.getElementById('treeSvg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+const yOf = d => maxDepth === 0 ? H / 2 : PADY + d * rowH;
+
+function simulate(r) {
+  const out = [], stack = [], result = [], seen = new Set(), hidden = new Set(), seenAt = {};
+  const snap = (line, msg, extra = {}) => out.push({
+    line, msg, stack: stack.map(f => ({...f})), result: [...result], seen: new Set(seen), hidden: new Set(hidden),
+    seenAt: {...seenAt}, ...extra
+  });
+
+  snap(3, `<b>result = []</b> — result[d] will hold the node visible at depth d.`);
+  snap(13, `Start the DFS: <b>dfs(${r ? r.val : 'None'}, 0)</b>.`);
+
+  function dfs(n, d, parent, side) {
+    const f = {id: n ? n.id : null, label: n ? n.val : 'None', d, right: '', left: ''};
+    stack.push(f);
+    if (!n) {
+      snap(7, parent
+        ? `<b>dfs(None, ${d})</b>: ${parent.val} has no ${side} child → <b>return</b>.`
+        : `<b>dfs(None, 0)</b>: the tree is empty → <b>return</b>.`,
+        {nullCall: parent ? {parent: parent.id, side} : null});
+      stack.pop();
+      return;
+    }
+    snap(6, `<b>dfs(${n.val}, depth=${d})</b>: node exists.`);
+    if (d === result.length) {
+      result.push(n.val); seen.add(n.id); seenAt[d] = n.id;
+      snap(9, `depth ${d} == len(result) ${d} ✓ — <b>${n.val}</b> is the first node reached at depth ${d}. We always go right first, so it's the rightmost → <b>append ${n.val}</b>.`,
+        {cmp: {d, len: d, yes: true}, appended: d});
+    } else {
+      hidden.add(n.id);
+      snap(8, `depth ${d} ≠ len(result) ${result.length} — depth ${d} already shows <b>${result[d]}</b>, so <b>${n.val}</b> is hidden behind it. Don't append.`,
+        {cmp: {d, len: result.length, yes: false}});
+    }
+    f.right = 'run';
+    snap(10, `Go <b>right first</b>: <b>dfs(${n.right ? n.right.val : 'None'}, ${d + 1})</b>.`);
+    dfs(n.right, d + 1, n, 'right');
+    f.right = 'ok';
+    f.left = 'run';
+    snap(11, `Back in dfs(${n.val}). Now the left: <b>dfs(${n.left ? n.left.val : 'None'}, ${d + 1})</b>.`);
+    dfs(n.left, d + 1, n, 'left');
+    f.left = 'ok';
+    stack.pop();
+  }
+
+  dfs(r, 0, null, null);
+  snap(14, `DFS finished. Return <b>${JSON.stringify(result)}</b>.`, {final: true});
+  return out;
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  const svg = document.getElementById('treeSvg');
+  let html = '';
+  if (!nodes.length) {
+    html = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" fill="#a8a29e" font-size="18">empty tree (root = None)</text>`;
+  } else {
+    const onStack = new Set(s.stack.filter(f => f.id !== null).map(f => f.id));
+    const top = s.stack[s.stack.length - 1];
+    const activeId = top && top.id !== null ? top.id : null;
+    const curDepth = top ? top.d : null;
+
+    html += `<text class="eye" x="${VX}" y="16">👁 view</text>`;
+    for (let d = 0; d <= maxDepth; d++) {
+      const y = yOf(d), cur = curDepth === d && !s.final;
+      html += `<rect class="band ${cur ? 'cur' : ''}" x="4" y="${y - 28}" width="${W - 8}" height="56" rx="10"/>`;
+      html += `<text class="bandlabel ${cur ? 'cur' : ''}" x="12" y="${y + 4}">depth ${d}</text>`;
+      const filled = d < s.result.length;
+      const check = s.cmp && s.cmp.d === d;
+      html += `<rect class="vbox ${filled ? 'filled' : ''} ${check ? 'check' : ''}" x="${VX - 22}" y="${y - 18}" width="44" height="36" rx="8"/>`;
+      html += `<text class="vtext ${filled ? '' : 'empty'}" x="${VX}" y="${y}">${filled ? s.result[d] : '?'}</text>`;
+      if (filled && s.seenAt[d] !== undefined) {
+        const n = nodes[s.seenAt[d]];
+        html += `<line class="sight" x1="${n.px + 24}" y1="${n.py}" x2="${VX - 24}" y2="${y}"/>`;
+      }
+    }
+    nodes.forEach(n => [n.left, n.right].forEach(c => {
+      if (!c) return;
+      const on = onStack.has(n.id) && onStack.has(c.id);
+      html += `<line class="edge ${on ? 'on' : ''}" x1="${n.px}" y1="${n.py}" x2="${c.px}" y2="${c.py}"/>`;
+    }));
+    if (s.nullCall) {
+      const p = nodes[s.nullCall.parent];
+      const gx = p.px + (s.nullCall.side === 'left' ? -30 : 30), gy = p.py + Math.max(rowH, 60) * 0.55;
+      html += `<line class="edge nulledge" x1="${p.px}" y1="${p.py}" x2="${gx}" y2="${gy}"/>`;
+      html += `<g class="nullnode"><circle cx="${gx}" cy="${gy}" r="13"/><text x="${gx}" y="${gy}">∅</text></g>`;
+    }
+    nodes.forEach(n => {
+      let cls = '';
+      if (n.id === activeId) cls = 'active';
+      else if (s.seen.has(n.id)) cls = 'seen';
+      else if (s.hidden.has(n.id)) cls = 'hidden';
+      else if (onStack.has(n.id)) cls = 'onstack';
+      html += `<g class="node ${cls}"><circle cx="${n.px}" cy="${n.py}" r="22"/><text x="${n.px}" y="${n.py}">${n.val}</text></g>`;
+    });
+  }
+  svg.innerHTML = html;
+
+  // call stack
+  const stEl = document.getElementById('stack');
+  const st = v => v === 'ok' ? '<span class="ok">✓</span>' : v === 'run' ? '<span class="run">…</span>' : '·';
+  stEl.innerHTML = s.stack.length
+    ? s.stack.map((f, k) => `<div class="frame ${k === s.stack.length - 1 ? 'top' : ''}"><span>dfs(${f.label}, depth=${f.d})</span>` +
+        (f.id === null ? '<span class="st">→ return</span>' : `<span class="st">right ${st(f.right)} · left ${st(f.left)}</span>`) + '</div>').join('')
+    : '<span class="empty">no active calls</span>';
+
+  // result
+  const rEl = document.getElementById('result');
+  let rh = s.result.map((v, d) => `<div class="rc ${s.appended === d ? 'new' : ''}"><span class="v">${v}</span><span class="ix">[${d}]</span></div>`).join('');
+  if (!s.final && nodes.length) rh += `<div class="rc slot"><span class="v">next</span><span class="ix">[${s.result.length}]</span></div>`;
+  rEl.innerHTML = rh || '<span class="empty">[]</span>';
+  document.getElementById('cmp').innerHTML = s.cmp
+    ? `<div class="cmp">depth (${s.cmp.d}) == len(result) (${s.cmp.len}) ? ${s.cmp.yes ? '<span class="yes">True → append</span>' : '<span class="no">False → skip</span>'}</div>`
+    : '';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${JSON.stringify(s.result)}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  let list;
+  try { list = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>[1,2,3,null,5,null,4]</code>.`;
+    return;
+  }
+  const root = buildTree(list);
+  layout(root);
+  steps = simulate(root);
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
