@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>733. Flood Fill — DFS Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+  .gridwrap{display:flex;justify-content:center;align-items:center;min-height:340px}
+  .grid{display:grid;gap:5px}
+  .cell{position:relative;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 18px Menlo,monospace;
+        border:3px solid rgba(0,0,0,.12);transition:background .35s,border-color .25s,box-shadow .25s}
+  .cell.ghost{border:2px dashed transparent;background:transparent;color:#c0b9ae;font-size:12px;font-weight:500}
+  .cell.current{border-color:var(--amber);box-shadow:0 0 0 4px var(--amber-soft)}
+  .cell.onstack{border-color:var(--blue)}
+  .cell.reject{border:3px dashed var(--red);box-shadow:0 0 0 4px var(--red-soft)}
+  .cell.ghost.reject{background:var(--red-soft);color:var(--red);font-size:18px;font-weight:700}
+  .cell.start::after{content:"start";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);font:600 9px sans-serif;letter-spacing:.05em;opacity:.7}
+  .cell.justpainted{animation:paint .45s}
+  @keyframes paint{0%{transform:scale(.7)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+  .badge{position:absolute;top:-8px;right:-8px;min-width:18px;height:18px;border-radius:9px;background:var(--blue);color:#fff;font:700 10px/18px sans-serif;text-align:center;padding:0 4px}
+  .cell.current .badge{background:var(--amber)}
+  .xmark{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font:700 11px/18px sans-serif;text-align:center}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-cur::before{border-color:var(--amber)!important;box-shadow:0 0 0 2px var(--amber-soft)}
+  .lg-stack::before{border-color:var(--blue)!important}
+  .lg-rej::before{border-color:var(--red)!important;border-style:dashed!important}
+  .lg-painted::before{border-color:transparent!important}
+
+  pre.code{margin:0;font:13.5px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.cm{color:#9ca3af}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px;max-height:260px;overflow:auto}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .frame.rej{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+  .dirs span{display:inline-block;width:20px;text-align:center;border-radius:4px;color:#d6d3d1;font-weight:700}
+  .dirs span.done{color:#57534e}
+  .dirs span.cur{background:var(--blue);color:#fff}
+  .why{font-size:12px;font-weight:500}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .vars{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;font-size:14px}
+  .vars .k{font-family:Menlo,monospace;color:var(--muted)}
+  .sw{display:inline-flex;align-items:center;justify-content:center;width:28px;height:24px;border-radius:5px;font:700 13px Menlo,monospace;border:2px solid rgba(0,0,0,.12);vertical-align:middle}
+  .done-banner{margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--green-soft);border:2px solid var(--green);font-family:Menlo,monospace;font-size:13px;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:360px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>733. Flood Fill — DFS on a grid</h1>
+  <p>Start at <code>(sr, sc)</code>, remember its <b>original</b> color, and spread to the 4 neighbours (down, up, right, left) that still have that color, repainting each one.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Image</h2>
+    <div class="gridwrap"><div class="grid" id="grid"></div></div>
+    <div class="legend">
+      <span class="lg-cur">current call</span>
+      <span class="lg-stack">waiting on the call stack (badge = depth)</span>
+      <span class="lg-rej">rejected: off the grid or wrong color</span>
+      <span class="lg-painted">fill = pixel color</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>Why check <code>original == color</code> first?</b> If they're equal, painting changes nothing, so a painted cell would still look
+      "original" and the DFS would bounce between neighbours forever. Otherwise, painting a cell is what marks it as visited:
+      once it has the new color, <code>image[r][c] != original</code> stops any later call there.<br>
+      <b>Diagonals don't count.</b> Only the 4 edge-sharing neighbours are explored.
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel"><h2>Variables</h2><div class="vars" id="vars"></div><div id="result"></div></div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1500">Slow</option>
+      <option value="850" selected>Normal</option>
+      <option value="400">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">image, sr, sc, color:</label>
+    <input type="text" id="input" value="[[1,1,1,0],[1,1,0,1],[1,0,1,1]], 1, 1, 2">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="[[1,1,1],[1,1,0],[1,0,1]], 1, 1, 2">LeetCode #1 (→ [[2,2,2],[2,2,0],[2,0,1]])</button>
+    <button class="preset" data-t="[[0,0,0],[0,0,0]], 0, 0, 0">LeetCode #2 (→ unchanged)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">floodFill</span>(self, image, sr, sc, color):`,
+  `    original = image[sr][sc]`,
+  `    <span class="kw">if</span> original == color:`,
+  `        <span class="kw">return</span> image`,
+  `    rows, cols = len(image), len(image[0])`,
+  `    <span class="kw">def</span> <span class="fn">dfs</span>(r, c):`,
+  `        <span class="kw">if</span> r &lt; 0 <span class="kw">or</span> r &gt;= rows <span class="kw">or</span> c &lt; 0 <span class="kw">or</span> c &gt;= cols:`,
+  `            <span class="kw">return</span>`,
+  `        <span class="kw">if</span> image[r][c] != original:`,
+  `            <span class="kw">return</span>`,
+  `        image[r][c] = color`,
+  `        dfs(r + 1, c)  <span class="cm"># down</span>`,
+  `        dfs(r - 1, c)  <span class="cm"># up</span>`,
+  `        dfs(r, c + 1)  <span class="cm"># right</span>`,
+  `        dfs(r, c - 1)  <span class="cm"># left</span>`,
+  `    dfs(sr, sc)`,
+  `    <span class="kw">return</span> image`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+const DIRS = [[1, 0, 'down', '↓'], [-1, 0, 'up', '↑'], [0, 1, 'right', '→'], [0, -1, 'left', '←']];
+const PALETTE = ['#3f3f46', '#e7e5e4', '#38bdf8', '#f472b6', '#a3e635', '#fb923c', '#a78bfa', '#facc15'];
+const fill = v => PALETTE[((v % PALETTE.length) + PALETTE.length) % PALETTE.length];
+const textOn = v => (v === 0 ? '#fff' : '#1c1917');
+const sw = v => `<span class="sw" style="background:${fill(v)};color:${textOn(v)}">${v}</span>`;
+
+let cfg = null, steps = [], idx = 0, timer = null;
+
+function parse(str) {
+  const arr = JSON.parse('[' + str + ']');
+  const [image, sr, sc, color] = arr;
+  if (!Array.isArray(image) || !image.length || !Array.isArray(image[0]) || !image[0].length) throw new Error('image must be a non-empty 2D array');
+  if (image.some(row => !Array.isArray(row) || row.length !== image[0].length)) throw new Error('all rows must have the same length');
+  if (![sr, sc, color].every(Number.isInteger)) throw new Error('sr, sc and color must be integers');
+  if (sr < 0 || sr >= image.length || sc < 0 || sc >= image[0].length) throw new Error('(sr, sc) is outside the image');
+  return {image: image.map(r => [...r]), sr, sc, color};
+}
+
+function simulate({image, sr, sc, color}) {
+  const out = [], stack = [];
+  const grid = image.map(r => [...r]);
+  let painted = 0;
+  const snap = (line, msg, extra = {}) => out.push({
+    line, msg, grid: grid.map(r => [...r]), stack: stack.map(f => ({...f})), painted, ...extra
+  });
+
+  const original = grid[sr][sc];
+  snap(2, `<b>original = image[${sr}][${sc}] = ${original}</b>. Every cell we fill must have this color.`, {original});
+  if (original === color) {
+    snap(3, `original (${original}) == color (${color}) → nothing would change.`, {original});
+    snap(4, `Return the image <b>unchanged</b>. (Without this check the DFS would loop forever.)`, {original, final: true});
+    return out;
+  }
+  snap(3, `original (${original}) ≠ color (${color}) → we need to paint.`, {original});
+  const rows = grid.length, cols = grid[0].length;
+  snap(5, `rows = <b>${rows}</b>, cols = <b>${cols}</b>.`, {original});
+  snap(16, `Start the flood: call <b>dfs(${sr}, ${sc})</b>.`, {original});
+
+  function dfs(r, c, from) {
+    const frame = {r, c, dir: -1, from, why: null};
+    stack.push(frame);
+    const via = from ? ` (${from} from (${r - DIRS.find(d => d[2] === from)[0]}, ${c - DIRS.find(d => d[2] === from)[1]}))` : '';
+
+    if (r < 0 || r >= rows || c < 0 || c >= cols) {
+      frame.why = 'off grid';
+      snap(8, `<b>dfs(${r}, ${c})</b>${via}: outside the grid → <b>return</b>.`, {original, probe: {r, c}});
+      stack.pop();
+      return;
+    }
+    if (grid[r][c] !== original) {
+      const v = grid[r][c];
+      frame.why = v === color ? 'already painted' : `color ${v}`;
+      snap(10, `<b>dfs(${r}, ${c})</b>${via}: image[${r}][${c}] = ${v} ≠ original ${original}` +
+        (v === color ? ' — <b>already painted</b>, so we don\'t revisit it' : ' — a different color, the fill stops here') + ' → <b>return</b>.',
+        {original, probe: {r, c}});
+      stack.pop();
+      return;
+    }
+    grid[r][c] = color; painted++;
+    snap(11, `<b>dfs(${r}, ${c})</b>${via}: color is ${original} ✓ → paint it <b>${color}</b>. This also marks it visited.`, {original, paintAt: {r, c}});
+
+    DIRS.forEach(([dr, dc, name, arrow], i) => {
+      frame.dir = i;
+      snap(12 + i, `From (${r}, ${c}) go <b>${name} ${arrow}</b>: call <b>dfs(${r + dr}, ${c + dc})</b>.`, {original});
+      dfs(r + dr, c + dc, name);
+    });
+    frame.dir = 4;
+    snap(15, `All 4 directions from (${r}, ${c}) are done → <b>dfs(${r}, ${c}) returns</b>.`, {original});
+    stack.pop();
+  }
+
+  dfs(sr, sc, null);
+  snap(17, `Flood complete: <b>${painted}</b> cell${painted === 1 ? '' : 's'} repainted. Return the image.`, {original, final: true});
+  return out;
+}
+
+function render() {
+  const s = steps[idx];
+  const {sr, sc, color} = cfg;
+  [...codeEl.children].forEach((d, i) => d.classList.toggle('hl', i + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  // grid with a ghost ring around it for out-of-bounds calls
+  const R = s.grid.length, C = s.grid[0].length;
+  const size = Math.max(30, Math.min(58, Math.floor(420 / (Math.max(R, C) + 2))));
+  const g = document.getElementById('grid');
+  g.style.gridTemplateColumns = `repeat(${C + 2}, ${size}px)`;
+  g.style.gridAutoRows = `${size}px`;
+  const top = s.stack[s.stack.length - 1];
+  const depthAt = {};
+  s.stack.forEach((f, i) => { depthAt[f.r + ',' + f.c] = i + 1; });
+  let html = '';
+  for (let i = -1; i <= R; i++) {
+    for (let j = -1; j <= C; j++) {
+      const inside = i >= 0 && i < R && j >= 0 && j < C;
+      const isProbe = s.probe && s.probe.r === i && s.probe.c === j;
+      if (!inside) {
+        const label = (i === -1 && j >= 0 && j < C) ? j : (j === -1 && i >= 0 && i < R) ? i : '';
+        html += `<div class="cell ghost ${isProbe ? 'reject' : ''}" title="${isProbe ? 'out of bounds' : ''}">${isProbe ? '✕' : label}</div>`;
+        continue;
+      }
+      const v = s.grid[i][j];
+      const cls = ['cell'];
+      let mark = '';
+      if (isProbe) { cls.push('reject'); mark = '<span class="xmark">✕</span>'; }
+      else if (top && top.r === i && top.c === j) { cls.push('current'); mark = `<span class="badge">${depthAt[i + ',' + j]}</span>`; }
+      else if (depthAt[i + ',' + j]) { cls.push('onstack'); mark = `<span class="badge">${depthAt[i + ',' + j]}</span>`; }
+      if (s.paintAt && s.paintAt.r === i && s.paintAt.c === j) cls.push('justpainted');
+      if (i === sr && j === sc) cls.push('start');
+      html += `<div class="${cls.join(' ')}" style="background:${fill(v)};color:${textOn(v)}" title="(${i}, ${j})">${v}${mark}</div>`;
+    }
+  }
+  g.innerHTML = html;
+
+  // call stack
+  const stEl = document.getElementById('stack');
+  stEl.innerHTML = s.stack.length
+    ? s.stack.map((f, i) => {
+        const isTop = i === s.stack.length - 1;
+        let right = '';
+        if (f.why) right = `<span class="why">return (${f.why})</span>`;
+        else if (f.dir >= 0) right = '<span class="dirs">' + DIRS.map((d, k) =>
+          `<span class="${k < f.dir ? 'done' : k === f.dir ? 'cur' : ''}" title="${d[2]}">${d[3]}</span>`).join('') + '</span>';
+        return `<div class="frame ${f.why ? 'rej' : isTop ? 'top' : ''}"><span>dfs(${f.r}, ${f.c})</span>${right}</div>`;
+      }).join('')
+    : '<span class="empty">no active calls</span>';
+
+  // variables
+  const R0 = cfg.image.length, C0 = cfg.image[0].length;
+  document.getElementById('vars').innerHTML = `
+    <span class="k">(sr, sc)</span><span>(${sr}, ${sc})</span>
+    <span class="k">original</span><span>${s.original !== undefined ? sw(s.original) : '<span class="empty">not set</span>'}</span>
+    <span class="k">color</span><span>${sw(color)}</span>
+    <span class="k">rows × cols</span><span>${R0} × ${C0}</span>
+    <span class="k">painted</span><span><b>${s.painted}</b> cell${s.painted === 1 ? '' : 's'}</span>`;
+  document.getElementById('result').innerHTML = s.final
+    ? `<div class="done-banner">return ${JSON.stringify(s.grid)}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(i) { idx = Math.max(0, Math.min(steps.length - 1, i)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  try {
+    cfg = parse(document.getElementById('input').value);
+  } catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>[[1,1],[1,0]], 0, 0, 2</code>.`;
+    return;
+  }
+  steps = simulate(cfg);
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
