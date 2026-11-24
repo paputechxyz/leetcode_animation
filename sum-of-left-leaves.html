@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>404. Sum of Left Leaves — DFS Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #treeSvg{width:100%;height:360px;display:block}
+  .edge{stroke:var(--gray);stroke-width:3;transition:stroke .3s,stroke-width .3s}
+  .edge.on{stroke:var(--blue);stroke-width:5}
+  .edge.nulledge{stroke-dasharray:5 5;stroke-width:2}
+  .elabel{font-size:11px;font-weight:700;fill:#a8a29e;text-anchor:middle;dominant-baseline:central}
+  .elabel.L{fill:#7c3aed}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font-size:18px;font-weight:700;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.onstack circle{fill:var(--blue-soft);stroke:var(--blue)}
+  .node.done circle{fill:var(--gray-soft);stroke:var(--gray)}
+  .node.done text{fill:#94a3b8}
+  .node.active circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
+  .node.leftleaf circle{fill:var(--green-soft);stroke:var(--green);stroke-width:4}
+  .node.leftleaf text{fill:var(--green)}
+  .node.rightleaf circle{fill:var(--red-soft);stroke:var(--red);stroke-width:4}
+  .node.rightleaf text{fill:var(--red)}
+  .nullnode circle{fill:none;stroke:#cbd5e1;stroke-width:2;stroke-dasharray:4 3}
+  .nullnode text{font-size:12px;fill:#94a3b8;text-anchor:middle;dominant-baseline:central}
+  .nullnode.active circle{stroke:var(--amber);stroke-width:3;fill:var(--amber-soft)}
+  .ret{font:700 12px Menlo,monospace;fill:#57534e}
+  .retbg{fill:#fff;stroke:#d6d3d1;stroke-width:1}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-active::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-stack::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-left::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-right::before{background:var(--red-soft);border-color:var(--red)!important}
+  .lg-done::before{background:var(--gray-soft);border-color:var(--gray)!important}
+
+  pre.code{margin:0;font:13.5px/1.6 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.cm{color:#9ca3af}.bool{color:#c2410c}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;display:flex;justify-content:space-between;gap:12px}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .frame .expr{color:#57534e}
+  .t{color:#15803d}.f{color:#c2410c}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .sum{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;font-family:Menlo,monospace;font-size:16px}
+  .leaf{padding:6px 12px;border-radius:8px;background:var(--green-soft);border:2px solid var(--green);font-weight:700;animation:pop .3s}
+  .leaf.skip{background:var(--red-soft);border-color:var(--red);color:var(--red);text-decoration:line-through;opacity:.75}
+  .op{color:var(--muted)}
+  .total{padding:6px 12px;border-radius:8px;background:var(--ink);color:#fff;font-weight:700}
+  .total.final{background:var(--green);animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:260px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>404. Sum of Left Leaves — DFS with an <code>is_left</code> flag</h1>
+  <p>A node counts only if it is a <b>leaf</b> <i>and</i> it is the <b>left child</b> of its parent. Each call is told which side it came from.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Tree</h2>
+    <svg id="treeSvg"></svg>
+    <div class="legend">
+      <span class="lg-active">current call</span>
+      <span class="lg-stack">waiting on child calls</span>
+      <span class="lg-left">left leaf → counted</span>
+      <span class="lg-right">right leaf / root leaf → 0</span>
+      <span class="lg-done">returned</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>Why the flag?</b> A leaf can't tell by itself whether it's a left child — only the parent knows.
+      So the parent passes <span class="bool">True</span> when going left and <span class="bool">False</span> when going right.
+      The root starts with <span class="bool">False</span>, because it has no parent.<br>
+      <b>The small badges</b> on the tree show what each call returned. A parent returns <i>left result + right result</i>.
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel"><h2>Leaves seen so far</h2><div class="sum" id="sum"></div></div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1600">Slow</option>
+      <option value="1000" selected>Normal</option>
+      <option value="500">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">Tree (level order):</label>
+    <input type="text" id="treeInput" value="1,2,3,4,5,null,6,null,null,7">
+    <button id="build">Build tree</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="3,9,20,null,null,15,7">LeetCode #1 (→ 24)</button>
+    <button class="preset" data-t="1">LeetCode #2: [1] (→ 0)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">sumOfLeftLeaves</span>(self, root):`,
+  `    <span class="kw">def</span> <span class="fn">dfs</span>(node, is_left):`,
+  `        <span class="kw">if not</span> node:`,
+  `            <span class="kw">return</span> 0`,
+  `        <span class="kw">if not</span> node.left <span class="kw">and not</span> node.right:`,
+  `            <span class="kw">return</span> node.val <span class="kw">if</span> is_left <span class="kw">else</span> 0`,
+  `        <span class="kw">return</span> dfs(node.left, <span class="bool">True</span>) + dfs(node.right, <span class="bool">False</span>)`,
+  `    <span class="kw">return</span> dfs(root, <span class="bool">False</span>)`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let nodes = [], nulls = [], steps = [], idx = 0, timer = null;
+
+function buildTree(str) {
+  const toks = str.split(',').map(s => s.trim()).filter(s => s.length);
+  nodes = [];
+  if (!toks.length || toks[0] === 'null') return null;
+  const mk = v => { const n = {id: nodes.length, val: Number(v), left: null, right: null}; nodes.push(n); return n; };
+  const r = mk(toks[0]);
+  const q = [r]; let i = 1;
+  while (q.length && i < toks.length) {
+    const n = q.shift();
+    if (i < toks.length && toks[i] !== 'null') { n.left = mk(toks[i]); q.push(n.left); } i++;
+    if (i < toks.length && toks[i] !== 'null') { n.right = mk(toks[i]); q.push(n.right); } i++;
+  }
+  return r;
+}
+
+const W = 600, H = 360;
+function layout(r) {
+  let x = 0, maxD = 0;
+  (function walk(n, d) {
+    if (!n) return;
+    walk(n.left, d + 1);
+    n.x = x++; n.d = d; maxD = Math.max(maxD, d);
+    walk(n.right, d + 1);
+  })(r, 0);
+  const pad = 40;
+  const colW = x <= 1 ? 120 : (W - 2 * pad) / (x - 1);
+  const rowH = maxD === 0 ? 0 : (H - 2 * pad - 20) / maxD;
+  nodes.forEach(n => {
+    n.px = x <= 1 ? W / 2 : pad + n.x * colW;
+    n.py = maxD === 0 ? H / 2 : pad + n.d * rowH;
+  });
+  // ghost positions for dfs(None) calls made by internal nodes with one missing child
+  nulls = [];
+  const gap = Math.max(rowH, 60) * 0.55, dx = Math.min(colW * 0.5, 45);
+  nodes.forEach(n => {
+    if (!n.left && !n.right) return;
+    if (!n.left) nulls.push({key: n.id + 'L', parent: n, side: 'L', px: n.px - dx, py: n.py + gap});
+    if (!n.right) nulls.push({key: n.id + 'R', parent: n, side: 'R', px: n.px + dx, py: n.py + gap});
+  });
+  document.getElementById('treeSvg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function simulate(r) {
+  const out = [], stack = [], ret = {}, nullSeen = new Set(), leaves = [];
+  let total = 0;
+  const snap = (line, msg, extra = {}) => out.push({
+    line, msg, total,
+    stack: stack.map(f => ({...f})),
+    ret: {...ret}, nullSeen: new Set(nullSeen), leaves: leaves.map(l => ({...l})), ...extra
+  });
+  const B = v => v ? '<span class="t">True</span>' : '<span class="f">False</span>';
+
+  snap(8, `Start: call <b>dfs(${r ? r.val : 'None'}, False)</b>. The root has no parent, so it is not a left child.`);
+
+  function dfs(n, isLeft, parent, side) {
+    const label = n ? n.val : 'None';
+    const frame = {id: n ? n.id : null, nullKey: n ? null : parent ? parent.id + side : 'root', label, isLeft, l: null, r: null};
+    stack.push(frame);
+    const f = () => stack[stack.length - 1];
+
+    if (!n) {
+      snap(3, `<b>dfs(None, ${B(isLeft)})</b>: ${parent ? `${parent.val} has no ${side === 'L' ? 'left' : 'right'} child, so` : ''} node is None…`);
+      snap(4, `…so return <b>0</b>. Nothing here.`);
+      if (frame.nullKey) nullSeen.add(frame.nullKey);
+      stack.pop();
+      return 0;
+    }
+
+    snap(3, `<b>dfs(${n.val}, ${B(isLeft)})</b>: node exists, keep going.`);
+    const leaf = !n.left && !n.right;
+    if (leaf) {
+      snap(5, `<b>${n.val}</b> has no children → it is a <b>leaf</b>.`, {focusLeaf: n.id});
+      const v = isLeft ? n.val : 0;
+      if (isLeft) { total += n.val; leaves.push({val: n.val, counted: true}); }
+      else leaves.push({val: n.val, counted: false});
+      snap(6, isLeft
+        ? `is_left is ${B(true)} → it's a <b>left leaf</b>! Return <b>${n.val}</b>.`
+        : `is_left is ${B(false)} → ${parent ? 'it is a <b>right</b> leaf' : 'it is the root'}, so it doesn't count. Return <b>0</b>.`,
+        {leafHit: n.id, leafLeft: isLeft});
+      ret[n.id] = v;
+      stack.pop();
+      return v;
+    }
+
+    snap(5, `<b>${n.val}</b> has children → not a leaf.`);
+    snap(7, `Evaluate the left side first: <b>dfs(${n.left ? n.left.val : 'None'}, True)</b>.`);
+    const a = dfs(n.left, true, n, 'L');
+    f().l = a;
+    snap(7, `Back in dfs(${n.val}): left side returned <b>${a}</b>. Now the right side: <b>dfs(${n.right ? n.right.val : 'None'}, False)</b>.`);
+    const b = dfs(n.right, false, n, 'R');
+    f().r = b;
+    snap(7, `Back in dfs(${n.val}): right side returned <b>${b}</b>. Return <b>${a} + ${b} = ${a + b}</b>.`);
+    ret[n.id] = a + b;
+    stack.pop();
+    return a + b;
+  }
+
+  const ans = dfs(r, false, null, null);
+  snap(8, `Done! The sum of left leaves is <b>${ans}</b>.`, {final: true});
+  return out;
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, i) => d.classList.toggle('hl', i + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  const svg = document.getElementById('treeSvg');
+  const onStack = new Set(s.stack.filter(f => f.id !== null).map(f => f.id));
+  const top = s.stack[s.stack.length - 1];
+  const activeId = top && top.id !== null ? top.id : null;
+  const activeNull = top && top.id === null ? top.nullKey : null;
+  const activeNullFrames = new Set(s.stack.filter(f => f.id === null).map(f => f.nullKey));
+  let html = '';
+
+  const edge = (p, c, side, cls = '') => {
+    const on = onStack.has(p.id) && (c.id !== undefined ? onStack.has(c.id) : activeNullFrames.has(c.key));
+    const mx = (p.px + c.px) / 2 + (side === 'L' ? -9 : 9), my = (p.py + c.py) / 2 - 4;
+    html += `<line class="edge ${cls} ${on ? 'on' : ''}" x1="${p.px}" y1="${p.py}" x2="${c.px}" y2="${c.py}"/>`;
+    html += `<text class="elabel ${side}" x="${mx}" y="${my}">${side === 'L' ? 'L·T' : 'R·F'}</text>`;
+  };
+  nodes.forEach(n => {
+    if (n.left) edge(n, n.left, 'L');
+    if (n.right) edge(n, n.right, 'R');
+  });
+  nulls.forEach(g => {
+    const visible = s.nullSeen.has(g.key) || activeNull === g.key;
+    if (!visible) return;
+    edge(g.parent, g, g.side, 'nulledge');
+    html += `<g class="nullnode ${activeNull === g.key ? 'active' : ''}"><circle cx="${g.px}" cy="${g.py}" r="13"/><text x="${g.px}" y="${g.py}">∅</text></g>`;
+  });
+
+  nodes.forEach(n => {
+    let cls = '';
+    const isLeaf = !n.left && !n.right;
+    const returned = n.id in s.ret;
+    if (s.leafHit === n.id) cls = s.leafLeft ? 'leftleaf' : 'rightleaf';
+    else if (n.id === activeId) cls = 'active';
+    else if (onStack.has(n.id)) cls = 'onstack';
+    else if (returned) cls = isLeaf && leftLeafIds.has(n.id) ? 'leftleaf' : 'done'; // counted leaves stay green
+    html += `<g class="node ${cls}"><circle cx="${n.px}" cy="${n.py}" r="22"/><text x="${n.px}" y="${n.py}">${n.val}</text></g>`;
+    if (returned) {
+      const t = `↩ ${s.ret[n.id]}`, w = t.length * 7.5 + 10, bx = n.px + 18, by = n.py - 34;
+      html += `<rect class="retbg" x="${bx}" y="${by}" width="${w}" height="18" rx="9"/><text class="ret" x="${bx + 6}" y="${by + 13}">${t}</text>`;
+    }
+  });
+  svg.innerHTML = html;
+
+  // call stack
+  const stEl = document.getElementById('stack');
+  stEl.innerHTML = s.stack.length
+    ? s.stack.map((f, i) => {
+        const flag = f.isLeft ? '<span class="t">True</span>' : '<span class="f">False</span>';
+        const isInternal = f.id !== null && (nodes[f.id].left || nodes[f.id].right);
+        const expr = isInternal ? `= ${f.l ?? '?'} + ${f.r ?? '?'}` : '';
+        return `<div class="frame ${i === s.stack.length - 1 ? 'top' : ''}"><span>dfs(${f.label}, ${flag})</span><span class="expr">${expr}</span></div>`;
+      }).join('')
+    : '<span class="empty">no active calls</span>';
+
+  // leaves summary
+  const sumEl = document.getElementById('sum');
+  const parts = s.leaves.map((l, i) => (i ? '<span class="op">+</span>' : '') +
+    `<span class="leaf ${l.counted ? '' : 'skip'}" title="${l.counted ? 'left leaf' : 'not a left leaf'}">${l.val}</span>`);
+  sumEl.innerHTML = (parts.length ? parts.join('') : '<span class="empty">no leaves reached yet</span>') +
+    `<span class="op">=</span><span class="total ${s.final ? 'final' : ''}">${s.total}</span>`;
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+let leftLeafIds = new Set();
+function go(i) { idx = Math.max(0, Math.min(steps.length - 1, i)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  const root = buildTree(document.getElementById('treeInput').value);
+  layout(root);
+  leftLeafIds = new Set(nodes.filter(p => p.left && !p.left.left && !p.left.right).map(p => p.left.id));
+  steps = simulate(root);
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('treeInput').value = b.dataset.t; load(); });
+document.getElementById('treeInput').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
