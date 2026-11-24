@@ -59,6 +59,12 @@
 
   .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
   .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
   .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.1fr;gap:18px}
   .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
   .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;display:flex;justify-content:space-between;gap:12px}
@@ -121,6 +127,12 @@
       <b>Why first = rightmost:</b> because <code>dfs(node.right)</code> runs before <code>dfs(node.left)</code>, every node
       further right at the same depth is visited earlier. Later nodes at that depth are hidden behind it.<br>
       <b>Left nodes can still show up</b> if nothing on the right reaches that deep.
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n)</span>
+        <span class="cxw">Every node is visited exactly once, hidden ones included. Each visit does O(1) work: one comparison and at most one append.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(h)</span>
+        <span class="cxw">The recursion stack is as deep as the tree's height h: O(log n) when balanced, O(n) for a chain of nodes. <code>result</code> holds h + 1 values, so it's O(h) as well.</span></div>
     </div>
   </div>
 
