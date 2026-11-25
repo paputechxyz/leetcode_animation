@@ -14,83 +14,83 @@
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
   header{padding:18px 28px 6px}
   h1{margin:0;font-size:22px}
-  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
-  .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;padding:14px 28px 28px}
+  header p{margin:6px 0 0;color:#57534e;font-size:15px;line-height:1.5;max-width:1100px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-  #gridSvg{width:100%;height:360px;display:block}
+  .panel h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+
+  #gridSvg{width:100%;height:340px;display:block}
   .hdr{font:700 15px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink)}
-  .hdr.on{fill:#b45309}
-  .hdrbg{fill:transparent;rx:8}
-  .hdrbg.on{fill:var(--amber-soft)}
-  .sub{font:11px Menlo,monospace;text-anchor:middle;fill:var(--muted)}
   .axis{font:600 12px sans-serif;fill:var(--muted)}
-  .cell rect{fill:#fff;stroke:#cbd5e1;stroke-width:2;transition:all .3s}
-  .cell text.sum{font:700 16px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:#a8a29e}
+  .cell rect{fill:#fff;stroke:#e7e5e4;stroke-width:2;transition:all .3s}
+  .cell text.sum{font:700 16px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:#c7c2ba}
   .cell text.ord{font:700 10px sans-serif;fill:#166534}
-  .cell.inheap rect{fill:var(--blue-soft);stroke:var(--blue);stroke-width:3}
-  .cell.inheap text.sum{fill:#1e3a8a}
+  .cell.front rect{fill:var(--blue-soft);stroke:var(--blue);stroke-width:3}
+  .cell.front text.sum{fill:#1e3a8a}
   .cell.fresh rect{stroke-width:5}
-  .cell.done rect{fill:var(--green-soft);stroke:var(--green);stroke-width:3}
+  .cell.done rect{fill:var(--green-soft);stroke:var(--green);stroke-width:2}
   .cell.done text.sum{fill:#166534}
   .cell.active rect{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
   .cell.active text.sum{fill:#92400e}
   .cell.skip rect{fill:var(--gray-soft);stroke:var(--gray);stroke-dasharray:4 3}
-  .cell.skip text.sum{fill:#cbd5e1}
+  .cell.skip text.sum{fill:#d6d3d1}
+  .status{font:600 12px sans-serif;dominant-baseline:central}
+  .status.front{fill:var(--blue)}
+  .status.out{fill:#a8a29e}
+  .status.skip{fill:#c0b9ae}
   .parrow{stroke:var(--blue);stroke-width:3;fill:none}
   .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
   .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:2px solid}
-  .lg-new::before{background:#fff;border-color:#cbd5e1!important}
-  .lg-heap::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-front::before{background:var(--blue-soft);border-color:var(--blue)!important}
   .lg-active::before{background:var(--amber-soft);border-color:var(--amber)!important}
   .lg-done::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-new::before{background:#fff;border-color:#e7e5e4!important}
   .lg-skip::before{background:var(--gray-soft);border-color:var(--gray)!important;border-style:dashed!important}
+
+  .msg{margin-top:12px;padding:12px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15.5px;line-height:1.5;min-height:52px}
+  .msg .round{display:inline-block;font:700 11px sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#b45309;background:#fff;border:1px solid #fde68a;border-radius:10px;padding:1px 8px;margin-right:6px;vertical-align:1px}
 
   pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
   pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
   pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
   pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
-  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.num{color:#c2410c}
+  pre.code .cm{color:#a8a29e}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.num{color:#c2410c}
 
-  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
-  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.55;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .idea ol{margin:4px 0 0;padding-left:20px}
+  .idea li{margin:2px 0}
   .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow{display:grid;grid-template-columns:56px 84px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
   .cxrow + .cxrow{border-top:1px solid var(--line)}
   .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
   .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
   .cxw{color:#57534e;line-height:1.45}
-  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
-  #heapSvg{width:100%;height:210px;display:block}
-  .hedge{stroke:var(--gray);stroke-width:2.5}
-  .hnode circle{fill:var(--blue-soft);stroke:var(--blue);stroke-width:3}
-  .hnode text.s{font:700 15px Menlo,monospace;text-anchor:middle;fill:#1e3a8a}
-  .hnode text.ij{font:10px Menlo,monospace;text-anchor:middle;fill:#475569}
-  .hnode.top circle{stroke:var(--amber);stroke-width:4}
-  .hnode.fresh circle{stroke-width:5;fill:#bfdbfe}
-  .harr{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;min-height:52px;align-items:flex-end}
-  .hc{display:flex;flex-direction:column;align-items:center;gap:3px}
-  .hc .v{padding:6px 8px;border-radius:7px;font:600 13px Menlo,monospace;background:var(--blue-soft);border:2px solid var(--blue);color:#1e3a8a}
-  .hc.top .v{border-color:var(--amber)}
-  .hc.fresh .v{animation:pop .35s;box-shadow:0 0 0 4px #bfdbfe}
-  .hc .ix{font:11px Menlo,monospace;color:var(--muted)}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cands{display:flex;flex-direction:column;gap:6px;min-height:44px}
+  .cand{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:10px;padding:7px 12px;border-radius:8px;
+        background:var(--blue-soft);border:2px solid var(--blue);font-family:Menlo,monospace;font-size:14px;animation:pop .3s}
+  .cand .row{font:600 12px sans-serif;color:#1e40af}
+  .cand .pair{color:#1e3a8a}
+  .cand .sum{font-weight:700;font-size:16px;color:#1e3a8a}
+  .cand.min{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+  .cand.min::after{content:"← smallest, popped next";grid-column:1 / -1;font:600 11px sans-serif;color:#b45309;margin-top:-2px}
+  .cand.fresh{box-shadow:0 0 0 4px #bfdbfe}
+  .note{margin-top:10px;font-size:12.5px;color:var(--muted);line-height:1.45}
   .empty{color:var(--muted);font-style:italic;font-size:14px}
-  .vars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .var{background:#faf8f4;border-radius:8px;padding:6px 10px;font-family:Menlo,monospace}
-  .var .k{font-size:11px;color:var(--muted)}
-  .var .val{font-size:16px;font-weight:700}
-  .var.on{background:var(--amber-soft)}
-  .rarr{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;min-height:56px;margin-top:10px}
+  .progress{font-size:14px;margin-bottom:10px;color:#57534e}
+  .progress b{font-family:Menlo,monospace}
+  .bar{height:8px;border-radius:4px;background:#efebe4;overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:var(--green);transition:width .3s}
+  .rarr{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;min-height:56px}
   .rc{display:flex;flex-direction:column;align-items:center;gap:3px}
   .rc .ix{font:11px Menlo,monospace;color:var(--muted)}
   .rc .v{padding:0 10px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534}
   .rc.new .v{animation:pop .35s;box-shadow:0 0 0 4px #bbf7d0}
-  .rc.slot .v{background:#fff;border:2px dashed var(--amber);color:#b45309;font-size:12px;font-weight:500}
-  .cmp{margin-top:12px;font-size:14px;font-family:Menlo,monospace;padding:8px 10px;border-radius:8px;background:#faf8f4}
-  .cmp .yes{color:var(--green);font-weight:700}
-  .cmp .no{color:var(--red);font-weight:700}
   .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
-  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+  @keyframes pop{from{transform:scale(.9);opacity:.3}to{transform:scale(1);opacity:1}}
 
   .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
@@ -106,54 +106,55 @@
 </head>
 <body>
 <header>
-  <h1>373. Find K Pairs with Smallest Sums — Min-heap (heapq)</h1>
-  <p>Think of all sums as a grid where every row and column is sorted. Keep <b>one candidate per row</b> in a min-heap. Pop the smallest, then push the next cell to its <b>right</b>. Stop after k pops.</p>
+  <h1>373. Find K Pairs with Smallest Sums — one candidate per row, in a min-heap</h1>
+  <p>Write every pair's sum in a grid. Each <b>row</b> is sorted, like a line of people ordered by sum, so only the
+    <b>front of each line</b> can be the next-smallest pair. Keep those fronts in a heap. Each round, <b>take the smallest front</b>;
+    the next cell in that row then <b>steps up</b> to become the new front. Do this k times.</p>
 </header>
 
 <div class="wrap">
   <div class="panel">
-    <h2>Sum grid <span style="text-transform:none;letter-spacing:0">(cell [i][j] = nums1[i] + nums2[j])</span></h2>
+    <h2>All pair sums <small>(row = nums1[i], column = nums2[j], cell = their sum)</small></h2>
     <svg id="gridSvg"></svg>
     <div class="legend">
-      <span class="lg-new">not reached yet</span>
-      <span class="lg-heap">in the heap (a candidate)</span>
-      <span class="lg-active">just popped</span>
+      <span class="lg-front">front of its row (in the heap)</span>
+      <span class="lg-active">taken this round</span>
       <span class="lg-done">in the answer (#order)</span>
-      <span class="lg-skip">row never seeded (i ≥ k)</span>
+      <span class="lg-new">not reached yet</span>
+      <span class="lg-skip">row never used (only first k rows)</span>
     </div>
     <div class="msg" id="msg"></div>
   </div>
 
   <div class="panel">
-    <h2>Code (Python, heapq)</h2>
+    <h2>Code</h2>
     <pre class="code" id="code"></pre>
     <div class="idea">
-      <b>Why one candidate per row is enough:</b> row i is sorted left to right, so its smallest pair that isn't used yet is
-      always the leftmost unused cell. The overall next-smallest pair must be one of these row minimums, and the heap holds
-      exactly those.<br>
-      <b>Why the seed uses only <code>min(len(nums1), k)</code> rows:</b> column 0 is sorted top to bottom too, so a row
-      at index ≥ k can never get into the top k: the k rows above it each have a smaller or equal pair in column 0.<br>
-      <b>Tuples compare by sum first</b>, so <code>heap[0]</code> is always the smallest sum. <code>i</code> and
-      <code>j</code> break ties and tell us which cell it is.
+      <b>The three things to understand:</b>
+      <ol>
+        <li><b>Rows are sorted</b>, so a row's smallest unused pair is always its leftmost unused cell, the "front".</li>
+        <li>The next answer must be <b>one of the fronts</b>. The heap holds exactly one front per row and hands back the smallest.</li>
+        <li>After taking a row's front, push the <b>cell to its right</b>. If there isn't one, that row is used up.</li>
+      </ol>
+      Only the first <code>k</code> rows are used: column 0 is sorted too, so a row further down starts behind k smaller pairs and can't make the top k.
     </div>
     <div class="cx">
       <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(k log r)</span>
-        <span class="cxw">Here r = min(m, k), with m = len(nums1). Seeding and <code>heapify</code> are O(r). The loop runs at most k times, and each pass does one pop and at most one push on a heap that never holds more than r items, so each costs O(log r).</span></div>
+        <span class="cxw">r = min(len(nums1), k), the number of rows used. There are at most k rounds, and each pops one entry and pushes at most one, on a heap of at most r entries.</span></div>
       <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(r)</span>
-        <span class="cxw">The heap keeps at most one entry per seeded row, so at most r = min(m, k) tuples. The output list adds O(k) on top of that if you count it.</span></div>
+        <span class="cxw">The heap holds one front per row, so at most r entries. The answer list adds O(k) if you count it.</span></div>
     </div>
   </div>
 
   <div class="bottom">
     <div class="panel">
-      <h2><code>heap</code> (min-heap: tree view + the actual list)</h2>
-      <svg id="heapSvg"></svg>
-      <div class="harr" id="heapArr"></div>
+      <h2>The heap <small>(one candidate per row, shown smallest first)</small></h2>
+      <div class="cands" id="cands"></div>
+      <div class="note">Python stores the heap as a list in its own internal order. All that matters is that <code>heappop</code> always returns the smallest.</div>
     </div>
     <div class="panel">
-      <h2>Variables &amp; <code>res</code></h2>
-      <div class="vars" id="vars"></div>
-      <div id="cmp"></div>
+      <h2>Answer <code>res</code></h2>
+      <div class="progress" id="progress"></div>
       <div class="rarr" id="result"></div>
       <div id="answer"></div>
     </div>
@@ -167,9 +168,9 @@
     <input type="range" id="slider" min="0" value="0">
     <span class="stepno" id="stepno"></span>
     <select id="speed">
-      <option value="1600">Slow</option>
-      <option value="1000" selected>Normal</option>
-      <option value="500">Fast</option>
+      <option value="2600">Slow</option>
+      <option value="1700" selected>Normal</option>
+      <option value="900">Fast</option>
     </select>
     <span style="flex-basis:100%;height:0"></span>
     <label class="hint">nums1, nums2, k:</label>
@@ -178,7 +179,7 @@
     <span class="hint">Examples:</span>
     <button class="preset" data-t="[1,7,11], [2,4,6], 3">#1 (→ [[1,2],[1,4],[1,6]])</button>
     <button class="preset" data-t="[1,1,2], [1,2,3], 2">#2 (→ [[1,1],[1,1]])</button>
-    <button class="preset" data-t="[1,2], [3], 3">#3 (heap runs out → [[1,3],[2,3]])</button>
+    <button class="preset" data-t="[1,2], [3], 3">#3 (runs out → [[1,3],[2,3]])</button>
     <span class="hint">· keys: ← → space</span>
   </div>
 </div>
@@ -188,21 +189,22 @@ const CODE = [
   `<span class="kw">import</span> heapq`,
   ``,
   `<span class="kw">class</span> <span class="ty">Solution</span>:`,
-  `    <span class="kw">def</span> <span class="fn">kSmallestPairs</span>(self, nums1: <span class="ty">list</span>[<span class="ty">int</span>], nums2: <span class="ty">list</span>[<span class="ty">int</span>], k: <span class="ty">int</span>) -> <span class="ty">list</span>[<span class="ty">list</span>[<span class="ty">int</span>]]:`,
+  `    <span class="kw">def</span> <span class="fn">kSmallestPairs</span>(self, nums1, nums2, k):`,
+  `        <span class="cm"># the front (column 0) of each of the first k rows</span>`,
   `        heap = [(nums1[i] + nums2[<span class="num">0</span>], i, <span class="num">0</span>) <span class="kw">for</span> i <span class="kw">in</span> range(min(len(nums1), k))]`,
   `        heapq.<span class="fn">heapify</span>(heap)`,
   `        res = []`,
   `        <span class="kw">while</span> heap <span class="kw">and</span> len(res) &lt; k:`,
-  `            s, i, j = heapq.<span class="fn">heappop</span>(heap)`,
+  `            s, i, j = heapq.<span class="fn">heappop</span>(heap)      <span class="cm"># smallest front</span>`,
   `            res.append([nums1[i], nums2[j]])`,
-  `            <span class="kw">if</span> j + <span class="num">1</span> &lt; len(nums2):`,
+  `            <span class="kw">if</span> j + <span class="num">1</span> &lt; len(nums2):                   <span class="cm"># next cell in row i</span>`,
   `                heapq.<span class="fn">heappush</span>(heap, (nums1[i] + nums2[j + <span class="num">1</span>], i, j + <span class="num">1</span>))`,
   `        <span class="kw">return</span> res`,
 ];
 const codeEl = document.getElementById('code');
 codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
 
-/* ---------- Python heapq, ported 1:1 so the heap list matches CPython exactly ---------- */
+/* Python heapq, ported 1:1 so ties pop in the same order as CPython */
 const lt = (a, b) => { for (let t = 0; t < a.length; t++) { if (a[t] !== b[t]) return a[t] < b[t]; } return false; };
 function siftdown(h, start, pos) {
   const item = h[pos];
@@ -234,7 +236,6 @@ function heappop(h) {
 
 let A = [], B = [], K = 0, seedRows = 0, steps = [], idx = 0, timer = null;
 const key = (i, j) => i + ',' + j;
-const tup = t => `(${t[0]}, ${t[1]}, ${t[2]})`;
 
 function parse(str) {
   const v = JSON.parse('[' + str.trim() + ']');
@@ -249,159 +250,114 @@ function parse(str) {
   return v;
 }
 
+// Each step highlights one or more code lines (1-based).
 function simulate() {
   const out = [], heap = [], res = [];
-  let vars = {s: '–', i: '–', j: '–'};
-  const snap = (line, msg, extra = {}) => out.push({
-    line, msg, heap: heap.map(t => [...t]), res: res.map(r => ({...r})), vars: {...vars}, ...extra
+  const snap = (lines, msg, extra = {}) => out.push({
+    lines, msg, heap: heap.map(t => [...t]), res: res.map(r => ({...r})), ...extra
   });
+  const R = n => `<span class="round">round ${n}</span>`;
 
   seedRows = Math.min(A.length, K);
-  snap(5, `Build the heap: one tuple <b>(nums1[i] + nums2[0], i, 0)</b> per row, for i in range(min(len(nums1), k)) = range(min(${A.length}, ${K})) = <b>range(${seedRows})</b>.` +
-    (A.length > K ? ` Rows ${K}…${A.length - 1} are skipped: they can't be in the top ${K}.` : ''));
-  for (let i = 0; i < seedRows; i++) {
-    heap.push([A[i] + B[0], i, 0]);
-    snap(5, `i = ${i}: add <b>(${A[i]} + ${B[0]}, ${i}, 0) = ${tup(heap[heap.length - 1])}</b>, the leftmost cell of row ${i}.`, {fresh: key(i, 0)});
-  }
-  const before = JSON.stringify(heap);
+  snap([], `Every cell is one possible pair, e.g. row 0, column 0 is <b>${A[0]} + ${B[0]} = ${A[0] + B[0]}</b>. ` +
+    `Rows get bigger to the right and columns get bigger going down. We want the <b>${K}</b> smallest cells without checking them all.`);
+
+  for (let i = 0; i < seedRows; i++) heap.push([A[i] + B[0], i, 0]);
   heapify(heap);
-  snap(6, `<b>heapify(heap)</b> makes the list a min-heap in O(${seedRows}). ` +
-    (JSON.stringify(heap) === before
-      ? `nums1 is sorted and every tuple uses nums2[0], so the list was <b>already</b> in heap order and nothing moves.`
-      : `Some tuples moved, and the smallest is now at heap[0].`) +
-    ` heap[0] = <b>${tup(heap[0])}</b> is the smallest pair overall.`);
-  snap(7, `<b>res = []</b>. It will collect the pairs in increasing order of sum.`);
+  snap([5, 6, 7, 8], `Start: the <b>front of each row</b> is its first cell (column 0). Put the fronts of the first ` +
+    `${seedRows} row${seedRows > 1 ? 's' : ''} into the heap: <b>${heap.slice().sort(lt2).map(t => t[0]).join(', ')}</b>.` +
+    (A.length > K ? ` Rows ${K}+ are never used: they start behind ${K} smaller fronts above them.` : ''));
 
-  while (true) {
-    const ok = heap.length > 0 && res.length < K;
-    snap(8, ok
-      ? `heap has <b>${heap.length}</b> item${heap.length > 1 ? 's' : ''} and len(res) = ${res.length} &lt; k = ${K} → <b>keep going</b>.`
-      : heap.length === 0
-        ? `The heap is <b>empty</b>: every pair has been used, so we stop before reaching k = ${K}.`
-        : `len(res) = ${res.length} == k = ${K} → <b>done</b>.`,
-      {cond: {heap: heap.length, len: res.length, ok}});
-    if (!ok) break;
-
+  let round = 0;
+  while (heap.length && res.length < K) {
+    round++;
     const [s, i, j] = heappop(heap);
-    vars = {s, i, j};
-    snap(9, `<b>heappop</b> → <b>${tup([s, i, j])}</b>, the smallest sum left. It's cell [${i}][${j}]: nums1[${i}] = <b>${A[i]}</b>, nums2[${j}] = <b>${B[j]}</b>.` +
-      (heap.length ? ` heap[0] is now ${tup(heap[0])}.` : ` The heap is now empty.`), {popped: key(i, j)});
-
     res.push({u: A[i], v: B[j], i, j});
-    snap(10, `Append <b>[${A[i]}, ${B[j]}]</b>, pair #${res.length} with sum ${s}.`, {popped: key(i, j), appended: res.length - 1});
+    snap([9, 10, 11], `${R(round)}The smallest front is <b>${s}</b> (row ${i}). Take it: <b>[${A[i]}, ${B[j]}]</b> is answer <b>#${res.length}</b>.`,
+      {taken: key(i, j), appended: res.length - 1});
 
     if (j + 1 < B.length) {
-      snap(11, `j + 1 = ${j + 1} &lt; len(nums2) = ${B.length} → row ${i} has a next cell to its right.`,
-        {popped: key(i, j), test: {j1: j + 1, n: B.length, yes: true}});
       const t = [A[i] + B[j + 1], i, j + 1];
       heappush(heap, t);
-      snap(12, `Push <b>(${A[i]} + ${B[j + 1]}, ${i}, ${j + 1}) = ${tup(t)}</b>. It's the new smallest unused cell of row ${i}, so each row still has exactly one candidate.`,
-        {fresh: key(i, j + 1), from: key(i, j)});
+      snap([12, 13], `${R(round)}Row ${i}'s next cell <b>steps up</b> as its new front: <b>${A[i]} + ${B[j + 1]} = ${t[0]}</b>. ` +
+        `The heap again holds one front per row.`, {fresh: key(i, j + 1), from: key(i, j)});
     } else {
-      snap(11, `j + 1 = ${j + 1} is not &lt; len(nums2) = ${B.length} → row ${i} has <b>no more cells</b>, so there's nothing to push. The row drops out of the heap.`,
-        {popped: key(i, j), test: {j1: j + 1, n: B.length, yes: false}});
+      snap([12], `${R(round)}Row ${i} has <b>no cells left</b>, so nothing steps up. That row is finished.`, {rowDone: i});
     }
   }
-  snap(13, `Return <b>${JSON.stringify(res.map(r => [r.u, r.v]))}</b>.`, {final: true});
+  const why = res.length === K ? `We have <b>${K}</b> pairs, so we're done.`
+    : `The heap is empty: every pair was used before reaching k = ${K}.`;
+  snap([9, 14], `${why} Return <b>${JSON.stringify(res.map(r => [r.u, r.v]))}</b>.`, {final: true});
   return out;
 }
+function lt2(a, b) { return lt(a, b) ? -1 : lt(b, a) ? 1 : 0; }
 
 /* ---------- rendering ---------- */
-const GW = 620, GH = 360;
+const GW = 640, GH = 340;
 function renderGrid(s) {
   const m = A.length, n = B.length;
-  const left = 92, top = 64;
-  const cs = Math.min(62, (GW - left - 16) / n, (GH - top - 12) / m);
+  const left = 70, top = 52, statusW = 120;
+  const cs = Math.min(62, (GW - left - statusW) / n, (GH - top - 8) / m);
   const gap = 6, sz = cs - gap;
   const cx = j => left + j * cs + cs / 2, cy = i => top + i * cs + cs / 2;
   const svg = document.getElementById('gridSvg');
   svg.setAttribute('viewBox', `0 0 ${GW} ${GH}`);
 
-  const inHeap = new Set(s.heap.map(t => key(t[1], t[2])));
+  const fronts = new Set(s.heap.map(t => key(t[1], t[2])));
+  const frontRow = {}; s.heap.forEach(t => frontRow[t[1]] = t);
   const order = {}; s.res.forEach((r, t) => order[key(r.i, r.j)] = t + 1);
-  const ci = s.final ? null : s.vars.i, cj = s.final ? null : s.vars.j;
 
-  let h = `<text class="axis" x="${left}" y="14">nums2[j] →</text>`;
-  h += `<text class="axis" x="6" y="${top - 10}">nums1[i] ↓</text>`;
-  for (let j = 0; j < n; j++) {
-    const on = j === cj;
-    h += `<rect class="hdrbg ${on ? 'on' : ''}" x="${cx(j) - sz / 2}" y="22" width="${sz}" height="36" rx="8"/>`;
-    h += `<text class="hdr ${on ? 'on' : ''}" x="${cx(j)}" y="35">${B[j]}</text><text class="sub" x="${cx(j)}" y="54">j=${j}</text>`;
-  }
+  let h = `<text class="axis" x="${left}" y="12">nums2 →</text>`;
+  h += `<text class="axis" x="4" y="${top - 8}">nums1 ↓</text>`;
+  for (let j = 0; j < n; j++) h += `<text class="hdr" x="${cx(j)}" y="32">${B[j]}</text>`;
   for (let i = 0; i < m; i++) {
-    const on = i === ci;
-    h += `<rect class="hdrbg ${on ? 'on' : ''}" x="8" y="${cy(i) - sz / 2}" width="${left - 18}" height="${sz}" rx="8"/>`;
-    h += `<text class="sub" x="26" y="${cy(i) + 4}">i=${i}</text><text class="hdr ${on ? 'on' : ''}" x="${left - 30}" y="${cy(i)}">${A[i]}</text>`;
-  }
-  for (let i = 0; i < m; i++) for (let j = 0; j < n; j++) {
-    const k = key(i, j);
-    let cls = '';
-    if (k === s.popped && order[k] === undefined) cls = 'active';
-    else if (order[k] !== undefined) cls = k === s.popped ? 'active' : 'done';
-    else if (inHeap.has(k)) cls = 'inheap' + (k === s.fresh ? ' fresh' : '');
-    else if (i >= seedRows) cls = 'skip';
-    h += `<g class="cell ${cls}"><rect x="${cx(j) - sz / 2}" y="${cy(i) - sz / 2}" width="${sz}" height="${sz}" rx="8"/>` +
-      `<text class="sum" x="${cx(j)}" y="${cy(i)}">${A[i] + B[j]}</text>` +
-      (order[k] !== undefined ? `<text class="ord" x="${cx(j) - sz / 2 + 5}" y="${cy(i) - sz / 2 + 12}">#${order[k]}</text>` : '') + '</g>';
+    h += `<text class="hdr" x="${left - 30}" y="${cy(i)}">${A[i]}</text>`;
+    for (let j = 0; j < n; j++) {
+      const k = key(i, j);
+      let cls = '';
+      if (k === s.taken) cls = 'active';
+      else if (order[k] !== undefined) cls = 'done';
+      else if (fronts.has(k)) cls = 'front' + (k === s.fresh ? ' fresh' : '');
+      else if (i >= seedRows) cls = 'skip';
+      h += `<g class="cell ${cls}"><rect x="${cx(j) - sz / 2}" y="${cy(i) - sz / 2}" width="${sz}" height="${sz}" rx="8"/>` +
+        `<text class="sum" x="${cx(j)}" y="${cy(i)}">${A[i] + B[j]}</text>` +
+        (order[k] !== undefined ? `<text class="ord" x="${cx(j) - sz / 2 + 5}" y="${cy(i) - sz / 2 + 12}">#${order[k]}</text>` : '') + '</g>';
+    }
+    // row status on the right
+    const sx = left + n * cs + 10;
+    let st = '', sc = '';
+    if (i >= seedRows) { st = 'not used'; sc = 'skip'; }
+    else if (frontRow[i]) { st = `◀ front: ${frontRow[i][0]}`; sc = 'front'; }
+    else if (s.res.some(r => r.i === i)) { st = 'used up'; sc = 'out'; }
+    h += `<text class="status ${sc}" x="${sx}" y="${cy(i)}">${st}</text>`;
   }
   if (s.from && s.fresh) {
-    const [fi, fj] = s.from.split(',').map(Number), [ti, tj] = s.fresh.split(',').map(Number);
-    h += `<line class="parrow" marker-end="url(#ah)" x1="${cx(fj) + sz / 2 - 6}" y1="${cy(fi)}" x2="${cx(tj) - sz / 2 + 2}" y2="${cy(ti)}"/>`;
+    const [fi, fj] = s.from.split(',').map(Number), [, tj] = s.fresh.split(',').map(Number);
+    h += `<line class="parrow" marker-end="url(#ah)" x1="${cx(fj) + sz / 2 - 6}" y1="${cy(fi)}" x2="${cx(tj) - sz / 2 + 2}" y2="${cy(fi)}"/>`;
   }
   svg.innerHTML = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/></marker></defs>` + h;
 }
 
-function renderHeap(s) {
-  const W = 620, H = 210, svg = document.getElementById('heapSvg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const hp = s.heap, freshIdx = hp.findIndex(t => key(t[1], t[2]) === s.fresh);
-  if (!hp.length) {
-    svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" fill="#a8a29e" font-size="16">heap is empty</text>`;
-  } else {
-    const levels = Math.floor(Math.log2(hp.length)) + 1;
-    const rowH = levels > 1 ? (H - 56) / (levels - 1) : 0;
-    const pos = p => {
-      const d = Math.floor(Math.log2(p + 1)), off = p - (2 ** d - 1), slots = 2 ** d;
-      return {x: (off + 0.5) * W / slots, y: levels > 1 ? 28 + d * rowH : H / 2};
-    };
-    let h = '';
-    for (let p = 1; p < hp.length; p++) {
-      const a = pos(p), b = pos((p - 1) >> 1);
-      h += `<line class="hedge" x1="${b.x}" y1="${b.y}" x2="${a.x}" y2="${a.y}"/>`;
-    }
-    hp.forEach((t, p) => {
-      const {x, y} = pos(p);
-      const cls = (p === 0 ? 'top ' : '') + (p === freshIdx ? 'fresh' : '');
-      h += `<g class="hnode ${cls}"><circle cx="${x}" cy="${y}" r="24"/>` +
-        `<text class="s" x="${x}" y="${y + 1}">${t[0]}</text><text class="ij" x="${x}" y="${y + 14}">${t[1]},${t[2]}</text></g>`;
-    });
-    svg.innerHTML = h;
-  }
-  document.getElementById('heapArr').innerHTML = hp.length
-    ? hp.map((t, p) => `<div class="hc ${p === 0 ? 'top' : ''} ${p === freshIdx ? 'fresh' : ''}"><span class="v">${tup(t)}</span><span class="ix">[${p}]</span></div>`).join('')
-    : '<span class="empty">[]</span>';
-}
-
 function render() {
   const s = steps[idx];
-  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', s.lines.includes(k + 1)));
   document.getElementById('msg').innerHTML = s.msg;
   renderGrid(s);
-  renderHeap(s);
 
-  const v = s.vars, hot = s.line >= 9 && s.line <= 12 && !s.final;
-  document.getElementById('vars').innerHTML =
-    [['s', v.s], ['i', v.i], ['j', v.j], ['len(heap)', s.heap.length], ['len(res)', s.res.length], ['k', K]]
-      .map(([k, val], t) => `<div class="var ${hot && t < 3 ? 'on' : ''}"><div class="k">${k}</div><div class="val">${val}</div></div>`).join('');
+  // heap candidates, smallest first
+  const sorted = s.heap.slice().sort(lt2);
+  document.getElementById('cands').innerHTML = sorted.length
+    ? sorted.map((t, p) => `<div class="cand ${p === 0 && !s.final ? 'min' : ''} ${key(t[1], t[2]) === s.fresh ? 'fresh' : ''}">` +
+        `<span class="row">row ${t[1]}</span><span class="pair">[${A[t[1]]}, ${B[t[2]]}]</span><span class="sum">${t[0]}</span></div>`).join('')
+    : '<span class="empty">empty</span>';
 
-  let cmp = '';
-  if (s.cond) cmp = `<div class="cmp">heap (${s.cond.heap} items) and len(res) ${s.cond.len} &lt; k ${K} ? ${s.cond.ok ? '<span class="yes">True → loop</span>' : '<span class="no">False → stop</span>'}</div>`;
-  else if (s.test) cmp = `<div class="cmp">j + 1 (${s.test.j1}) &lt; len(nums2) (${s.test.n}) ? ${s.test.yes ? '<span class="yes">True → push right neighbor</span>' : '<span class="no">False → row exhausted</span>'}</div>`;
-  document.getElementById('cmp').innerHTML = cmp;
-
-  let rh = s.res.map((r, t) => `<div class="rc ${s.appended === t ? 'new' : ''}"><span class="v">[${r.u},${r.v}]</span><span class="ix">#${t + 1} · sum ${r.u + r.v}</span></div>`).join('');
-  if (!s.final && s.res.length < K) rh += `<div class="rc slot"><span class="v">next</span><span class="ix">#${s.res.length + 1}</span></div>`;
-  document.getElementById('result').innerHTML = '<span class="hint" style="align-self:center">res =</span>' + rh;
+  // answer
+  const n = s.res.length;
+  document.getElementById('progress').innerHTML = `Found <b>${n}</b> of <b>k = ${K}</b>` +
+    `<div class="bar"><i style="width:${Math.min(100, 100 * n / K)}%"></i></div>`;
+  document.getElementById('result').innerHTML = n
+    ? s.res.map((r, t) => `<div class="rc ${s.appended === t ? 'new' : ''}"><span class="v">[${r.u},${r.v}]</span><span class="ix">#${t + 1} · sum ${r.u + r.v}</span></div>`).join('')
+    : '<span class="empty">nothing yet</span>';
   document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${JSON.stringify(s.res.map(r => [r.u, r.v]))}</div>` : '';
 
   document.getElementById('slider').value = idx;
