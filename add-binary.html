@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>67. Add Binary — Two Pointers + Carry Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9; --purple:#7c3aed;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:6px 0 0;color:#57534e;font-size:15px;line-height:1.5}
+  .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .panel h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+
+  /* column addition */
+  .addwrap{display:flex;justify-content:center;padding:10px 0 4px;min-height:300px;align-items:center}
+  .add{display:grid;gap:4px 6px;align-items:center}
+  .lab{font:600 12px sans-serif;color:var(--muted);text-align:right;padding-right:8px;white-space:nowrap}
+  .lab.op{font:700 22px Menlo,monospace;color:var(--ink)}
+  .d{width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-radius:10px;font:700 26px Menlo,monospace;position:relative;transition:background .25s,border-color .25s}
+  .d.dig{background:#fff;border:2px solid #e7e5e4}
+  .d.used{color:#c7c2ba;background:#fafaf9;border:2px solid #f0eee9}
+  .d.ptr{background:var(--blue-soft);border:2px solid var(--blue);color:#1e3a8a}
+  .d.read{background:var(--amber-soft);border:3px solid var(--amber);color:#92400e}
+  .d.ghost{color:#d6d3d1;font-style:italic;font-weight:500;border:2px dashed #e7e5e4}
+  .d.ghost.read{color:#b45309;border:2px dashed var(--amber);background:var(--amber-soft)}
+  .d.carry{height:30px;font-size:16px;color:#c7c2ba}
+  .d.carry.one{color:#b45309;background:var(--amber-soft);border:2px solid #fde68a}
+  .d.carry.new{animation:pop .4s;box-shadow:0 0 0 3px #fde68a}
+  .d.carry.read{border:2px solid var(--amber)}
+  .d.res{background:var(--green-soft);border:2px solid var(--green);color:#166534}
+  .d.res.new{animation:pop .4s;box-shadow:0 0 0 4px #bbf7d0}
+  .d.slot{border:2px dashed #e7e5e4}
+  .d.slot.cur{border-color:var(--amber)}
+  .rule{grid-column:2 / -1;height:3px;background:var(--ink);border-radius:2px;margin:2px 0}
+  .ptrlab{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);font:700 11px Menlo,monospace;color:var(--blue);white-space:nowrap}
+  .colband{outline:3px solid var(--amber);outline-offset:3px}
+  .idxrow .d{height:16px;font:11px Menlo,monospace;color:#c0b9ae}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:18px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-ptr::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-read::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-res::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-used::before{background:#fafaf9;border-color:#e7e5e4!important}
+  .lg-ghost::before{background:#fff;border-color:#d6d3d1!important;border-style:dashed!important}
+
+  .msg{margin-top:12px;padding:12px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15.5px;line-height:1.5;min-height:52px}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.num{color:#c2410c}.str{color:#15803d}
+
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.55;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 84px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.1fr .9fr 1fr;gap:18px}
+  .vars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .var{background:#faf8f4;border-radius:8px;padding:6px 10px;font-family:Menlo,monospace}
+  .var .k{font-size:11px;color:var(--muted)}
+  .var .val{font-size:18px;font-weight:700}
+  .var.on{background:var(--amber-soft)}
+  .formula{margin-top:12px;font:15px Menlo,monospace;padding:10px 12px;border-radius:8px;background:#faf8f4;min-height:44px;line-height:1.6}
+  .formula b{color:#92400e}
+  .tt{width:100%;border-collapse:collapse;font:14px Menlo,monospace;text-align:center}
+  .tt th{font:600 11px sans-serif;color:var(--muted);padding:4px;border-bottom:1px solid var(--line)}
+  .tt td{padding:6px 4px;border-bottom:1px solid #f0eee9}
+  .tt tr.on td{background:var(--amber-soft);font-weight:700}
+  .tt .dg{color:#166534}.tt .cy{color:#b45309}
+  .ttnote{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
+  .rlist{display:flex;gap:5px;flex-wrap:wrap;align-items:center;min-height:40px;font-family:Menlo,monospace}
+  .rlist .c{padding:5px 9px;border-radius:6px;background:var(--green-soft);border:2px solid var(--green);font-weight:700;color:#166534}
+  .rlist .c.new{animation:pop .35s;box-shadow:0 0 0 3px #bbf7d0}
+  .rlist .br{color:var(--muted);font-size:18px}
+  .rnote{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.45}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 15px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:220px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>67. Add Binary — column addition from the right, with a carry</h1>
+  <p>Exactly like adding numbers by hand: start at the <b>rightmost</b> digit of each string, add the two digits plus the <b>carry</b>,
+    write down <code>total % 2</code>, carry <code>total // 2</code> to the next column, and move left. Keep going while either string has digits <b>or</b> a carry is left.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Column addition <small>(rightmost column first)</small></h2>
+    <div class="addwrap"><div class="add" id="add"></div></div>
+    <div class="legend">
+      <span class="lg-ptr">digit the pointer (i / j) is on</span>
+      <span class="lg-read">being added this column</span>
+      <span class="lg-res">result digit written</span>
+      <span class="lg-used">already used</span>
+      <span class="lg-ghost">no digit left → counts as 0</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>Why <code>% 2</code> and <code>// 2</code>?</b> In binary a column can total 0, 1, 2 or 3 (two digits plus a carry).
+      The digit written is the remainder after dividing by 2; the carry is how many 2s fit.<br>
+      <b>Why <code>or carry</code> in the loop?</b> When both strings run out, a carry of 1 still has to be written as a new leftmost digit.
+      That's how <code>"11" + "1"</code> becomes 3 digits: <code>"100"</code>.<br>
+      <b>Why <code>reversed</code>?</b> Digits are produced right-to-left, so <code>res</code> is backwards. Appending and reversing once
+      is O(n), but inserting at the front each time would be O(n²).
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(max(m, n))</span>
+        <span class="cxw">m = len(a), n = len(b). The loop runs once per column: max(m, n) times, plus at most one more for a final carry. Each pass is O(1), and the final reverse and join is O(max(m, n)).</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(max(m, n))</span>
+        <span class="cxw"><code>res</code> holds one character per output digit, at most max(m, n) + 1. The answer string is the same size. Apart from that, only i, j, carry and total.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h2>Variables</h2>
+      <div class="vars" id="vars"></div>
+      <div class="formula" id="formula"></div>
+    </div>
+    <div class="panel">
+      <h2>All possible totals</h2>
+      <table class="tt" id="tt"></table>
+      <div class="ttnote">total = carry + a digit + b digit, so it is always 0–3.</div>
+    </div>
+    <div class="panel">
+      <h2><code>res</code> <small>(built backwards)</small></h2>
+      <div class="rlist" id="rlist"></div>
+      <div class="rnote" id="rnote"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1700">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="550">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">a, b:</label>
+    <input type="text" id="input" value='"1011", "111"'>
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t='"11", "1"'>#1 (→ "100")</button>
+    <button class="preset" data-t='"1010", "1011"'>#2 (→ "10101")</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">class</span> <span class="ty">Solution</span>:`,
+  `    <span class="kw">def</span> <span class="fn">addBinary</span>(self, a: <span class="ty">str</span>, b: <span class="ty">str</span>) -> <span class="ty">str</span>:`,
+  `        res = []`,
+  `        i, j = len(a) - <span class="num">1</span>, len(b) - <span class="num">1</span>`,
+  `        carry = <span class="num">0</span>`,
+  ``,
+  `        <span class="kw">while</span> i >= <span class="num">0</span> <span class="kw">or</span> j >= <span class="num">0</span> <span class="kw">or</span> carry:`,
+  `            total = carry`,
+  `            <span class="kw">if</span> i >= <span class="num">0</span>:`,
+  `                total += int(a[i])`,
+  `                i -= <span class="num">1</span>`,
+  `            <span class="kw">if</span> j >= <span class="num">0</span>:`,
+  `                total += int(b[j])`,
+  `                j -= <span class="num">1</span>`,
+  ``,
+  `            res.append(str(total % <span class="num">2</span>))`,
+  `            carry = total // <span class="num">2</span>`,
+  ``,
+  `        <span class="kw">return</span> <span class="str">""</span>.join(reversed(res))`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let A = '', B = '', steps = [], idx = 0, timer = null;
+
+function parse(str) {
+  const v = JSON.parse('[' + str.trim() + ']');
+  if (v.length !== 2 || typeof v[0] !== 'string' || typeof v[1] !== 'string') throw new Error('expected two quoted strings, like "11", "1"');
+  for (const s of v) {
+    if (!/^[01]+$/.test(s)) throw new Error('strings may only contain 0 and 1');
+    if (s.length > 1 && s[0] === '0') throw new Error('no leading zeros (except "0" itself), as in the problem');
+    if (s.length > 10) throw new Error('keep each string to 10 digits or fewer so the columns fit');
+  }
+  return v;
+}
+
+function simulate(a, b) {
+  const out = [], res = [], carryIn = [0];   // carryIn[c] = carry flowing into column c (c = 0 is rightmost)
+  let i = a.length - 1, j = b.length - 1, carry = 0, total = null, col = null;
+  let ad = null, bd = null, readA = null, readB = null;
+  const snap = (lines, msg, extra = {}) => out.push({
+    lines, msg, i, j, carry, total, col, ad, bd, readA, readB, res: [...res], carryIn: [...carryIn], ...extra
+  });
+
+  snap([3, 4, 5], `<b>res = []</b>. Point <b>i</b> at the last digit of a (i = ${i}) and <b>j</b> at the last digit of b (j = ${j}): ` +
+    `the rightmost column. <b>carry = 0</b>.`);
+
+  while (true) {
+    const parts = [];
+    if (i >= 0) parts.push(`i = ${i} ≥ 0`);
+    if (j >= 0) parts.push(`j = ${j} ≥ 0`);
+    if (carry) parts.push(`carry = 1`);
+    const go = parts.length > 0;
+    col = go ? res.length : null; total = null; ad = bd = readA = readB = null;
+    snap([7], go
+      ? `Loop check: <b>${parts.join(' and ')}</b> → work on column <b>${res.length}</b> from the right.` +
+        (i < 0 && j < 0 ? ` Both strings are used up, but the <b>carry</b> still has to be written.` : '')
+      : `Loop check: i = ${i}, j = ${j}, carry = 0 → all false, <b>stop</b>.`);
+    if (!go) break;
+
+    total = carry;
+    snap([8], `Start with <b>total = carry = ${carry}</b>.`, {carryRead: true});
+
+    if (i >= 0) {
+      ad = +a[i]; readA = i; total += ad; i -= 1;
+      snap([9, 10, 11], `a[${readA}] = <b>${ad}</b> → total = ${total - ad} + ${ad} = <b>${total}</b>. Move i left to ${i}.`);
+    } else {
+      ad = 0; readA = -1;
+      snap([9], `i = ${i}: a has <b>no digits left</b>, so it adds nothing (like a leading 0).`);
+    }
+    if (j >= 0) {
+      bd = +b[j]; readB = j; total += bd; j -= 1;
+      snap([12, 13, 14], `b[${readB}] = <b>${bd}</b> → total = ${total - bd} + ${bd} = <b>${total}</b>. Move j left to ${j}.`);
+    } else {
+      bd = 0; readB = -1;
+      snap([12], `j = ${j}: b has <b>no digits left</b>, so it adds nothing.`);
+    }
+
+    res.push(String(total % 2));
+    snap([16], `total ${total} % 2 = <b>${total % 2}</b> → write ${total % 2} in this column. res = <b>[${res.map(x => `'${x}'`).join(', ')}]</b>.`,
+      {newRes: res.length - 1});
+    carry = Math.floor(total / 2);
+    carryIn[res.length] = carry;
+    snap([17], `total ${total} // 2 = <b>${carry}</b> → ` +
+      (carry ? `carry <b>1</b> into the next column to the left.` : `no carry for the next column.`), {newCarry: res.length});
+  }
+
+  col = null;
+  const ans = res.slice().reverse().join('');
+  snap([19], `res was built right-to-left: [${res.map(x => `'${x}'`).join(', ')}]. <b>Reverse</b> it and join → <b>"${ans}"</b>.`,
+    {final: true, answer: ans});
+  return out;
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', s.lines.includes(k + 1)));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  // ----- column addition grid -----
+  const cols = Math.max(A.length, B.length) + 1;
+  const C = c => cols - 1 - c;               // column-from-right → grid position
+  const addEl = document.getElementById('add');
+  addEl.style.gridTemplateColumns = `auto repeat(${cols}, 52px)`;
+  let h = '';
+  const band = c => (s.col === c ? ' colband' : '');
+
+  // carry row
+  h += `<div class="lab">carry</div>`;
+  for (let p = 0; p < cols; p++) {
+    const c = cols - 1 - p;
+    const v = s.carryIn[c];
+    let cls = 'd carry';
+    let txt = '';
+    if (c > 0 && v !== undefined) { txt = v; if (v) cls += ' one'; if (s.newCarry === c) cls += ' new'; }
+    if (s.carryRead && s.col === c && c > 0) cls += ' read';
+    h += `<div class="${cls}">${txt}</div>`;
+  }
+
+  const row = (label, str, ptr, read, name, isB) => {
+    let r = `<div class="lab ${isB ? 'op' : ''}">${isB ? '+' : ''}</div>`;
+    for (let p = 0; p < cols; p++) {
+      const c = cols - 1 - p;
+      const k = str.length - 1 - c;            // string index in this column
+      if (k >= 0) {
+        let cls = 'd dig';
+        if (read === k) cls = 'd read';
+        else if (k > ptr) cls = 'd used';
+        else if (k === ptr) cls = 'd ptr';
+        const lab = k === ptr && !s.final ? `<span class="ptrlab">${name}=${k}</span>` : '';
+        r += `<div class="${cls}${band(c)}">${str[k]}${lab}</div>`;
+      } else if (s.col === c && read === -1) {
+        r += `<div class="d ghost read${band(c)}">0</div>`;
+      } else {
+        r += `<div class="d"></div>`;
+      }
+    }
+    return r;
+  };
+  h += row('a', A, s.i, s.readA, 'i', false);
+  h += row('b', B, s.j, s.readB, 'j', true);
+  h += `<div></div><div class="rule" style="grid-column:2 / span ${cols}"></div>`;
+
+  // result row
+  h += `<div class="lab">result</div>`;
+  for (let p = 0; p < cols; p++) {
+    const c = cols - 1 - p;
+    if (c < s.res.length) h += `<div class="d res ${s.newRes === c ? 'new' : ''}${band(c)}">${s.res[c]}</div>`;
+    else if (s.col === c) h += `<div class="d slot cur">?</div>`;
+    else h += `<div class="d"></div>`;
+  }
+  addEl.innerHTML = h;
+
+  // ----- variables -----
+  const hot = n => s.lines.some(l => n.includes(l));
+  document.getElementById('vars').innerHTML = [
+    ['i', s.i, [4, 11]], ['j', s.j, [4, 14]], ['carry', s.carry, [5, 17]], ['total', s.total === null ? '–' : s.total, [8, 10, 13]],
+  ].map(([k, v, ls]) => `<div class="var ${hot(ls) ? 'on' : ''}"><div class="k">${k}</div><div class="val">${v}</div></div>`).join('');
+  let f = '';
+  if (s.total !== null && s.col !== null) {
+    const cin = s.carryIn[s.col] ?? 0;
+    const aTxt = s.readA === null ? '?' : s.ad, bTxt = s.readB === null ? '?' : s.bd;
+    f = `total = carry ${cin} + a ${aTxt} + b ${bTxt}` + (s.readB !== null ? ` = <b>${s.total}</b>` : '');
+    if (s.newRes !== undefined || s.newCarry !== undefined) f += `<br>digit = ${s.total} % 2 = <b>${s.total % 2}</b>`;
+    if (s.newCarry !== undefined) f += ` · carry = ${s.total} // 2 = <b>${Math.floor(s.total / 2)}</b>`;
+  } else if (s.final) f = `"".join(reversed(res)) = <b>"${s.answer}"</b>`;
+  document.getElementById('formula').innerHTML = f || '<span class="empty">—</span>';
+
+  // ----- truth table -----
+  const showRow = s.total !== null && (s.newRes !== undefined || s.newCarry !== undefined);
+  document.getElementById('tt').innerHTML = '<tr><th>total</th><th>written (% 2)</th><th>carry (// 2)</th></tr>' +
+    [0, 1, 2, 3].map(t => `<tr class="${showRow && s.total === t ? 'on' : ''}"><td>${t}</td><td class="dg">${t % 2}</td><td class="cy">${t >> 1}</td></tr>`).join('');
+
+  // ----- res list -----
+  document.getElementById('rlist').innerHTML = s.res.length
+    ? `<span class="br">[</span>` + s.res.map((x, k) => `<span class="c ${s.newRes === k ? 'new' : ''}">'${x}'</span>`).join('') + `<span class="br">]</span>`
+    : '<span class="empty">[]</span>';
+  document.getElementById('rnote').innerHTML = s.res.length
+    ? `res[0] is the <b>rightmost</b> digit, so the list reads backwards. Reversed: <b>${s.res.slice().reverse().join('')}</b>`
+    : '';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return "${s.answer}"</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  try { [A, B] = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}.`;
+    return;
+  }
+  steps = simulate(A, B);
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
