@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>190. Reverse Bits — Bit Manipulation Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:6px 0 0;color:#57534e;font-size:15px;line-height:1.5}
+  .wrap{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .panel h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+
+  #bitSvg{width:100%;height:330px;display:block}
+  .rowlab{font:700 13px Menlo,monospace;fill:var(--ink)}
+  .rowsub{font:11px sans-serif;fill:var(--muted)}
+  .ix{font:9px Menlo,monospace;fill:#b8b2a8;text-anchor:middle}
+  .org{font:8.5px Menlo,monospace;fill:#15803d;text-anchor:middle}
+  .bit rect{stroke-width:1.5;rx:4}
+  .bit text{font:700 13px Menlo,monospace;text-anchor:middle;dominant-baseline:central}
+  .bit.one rect{fill:#44403c;stroke:#44403c}.bit.one text{fill:#fff}
+  .bit.zero rect{fill:#fff;stroke:#d6d3d1}.bit.zero text{fill:#a8a29e}
+  .bit.ghost rect{fill:#fafaf9;stroke:#e7e5e4;stroke-dasharray:3 2}.bit.ghost text{fill:#d6d3d1;font-weight:400}
+  .bit.used rect{fill:var(--gray-soft);stroke:var(--gray)}.bit.used text{fill:#cbd5e1}
+  .bit.res1 rect{fill:var(--green);stroke:var(--green)}.bit.res1 text{fill:#fff}
+  .bit.res0 rect{fill:var(--green-soft);stroke:var(--green)}.bit.res0 text{fill:#166534}
+  .bit.cur rect{fill:var(--amber-soft);stroke:var(--amber);stroke-width:3}.bit.cur text{fill:#92400e}
+  .bit.cur.one rect,.bit.cur.res1 rect{fill:var(--amber)}.bit.cur.one text,.bit.cur.res1 text{fill:#fff}
+  .move{stroke:var(--amber);stroke-width:2.5;fill:none}
+  .dir{font:600 11px sans-serif;fill:#b45309}
+  .mirror{stroke:var(--green);stroke-width:1.3;opacity:.55}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-one::before{background:#44403c;border-color:#44403c!important}
+  .lg-zero::before{background:#fff;border-color:#d6d3d1!important}
+  .lg-cur::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-res::before{background:var(--green);border-color:var(--green)!important}
+  .lg-used::before{background:var(--gray-soft);border-color:var(--gray)!important}
+  .lg-ghost::before{background:#fafaf9;border-color:#e7e5e4!important;border-style:dashed!important}
+
+  .msg{margin-top:12px;padding:12px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15.5px;line-height:1.5;min-height:52px}
+  .msg .round{display:inline-block;font:700 11px sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#b45309;background:#fff;border:1px solid #fde68a;border-radius:10px;padding:1px 8px;margin-right:6px;vertical-align:1px}
+
+  pre.code{margin:0;font:13.5px/1.6 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.6em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.num{color:#c2410c}
+
+  .ops{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}
+  .ops td{padding:6px 8px;border-bottom:1px solid #f0eee9;vertical-align:top;color:#57534e}
+  .ops td:first-child{font:700 14px Menlo,monospace;color:#7c3aed;white-space:nowrap;width:90px}
+  .ops tr.on td{background:var(--amber-soft)}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.3fr;gap:18px}
+  .vars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .var{background:#faf8f4;border-radius:8px;padding:6px 10px;font-family:Menlo,monospace}
+  .var .k{font-size:11px;color:var(--muted)}
+  .var .val{font-size:17px;font-weight:700}
+  .var.on{background:var(--amber-soft)}
+  .prog{margin-top:12px;font-size:13px;color:var(--muted)}
+  .bar{height:8px;border-radius:4px;background:#efebe4;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;background:var(--green);transition:width .25s}
+  .formula{font:14px/1.7 Menlo,monospace;padding:10px 12px;border-radius:8px;background:#faf8f4;min-height:44px;overflow-x:auto;white-space:nowrap}
+  .formula b{color:#92400e}
+  .formula .g{color:#15803d;font-weight:700}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.9);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:200px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>190. Reverse Bits — pop from the right of n, push onto the right of result</h1>
+  <p>Repeat 32 times: take n's <b>lowest bit</b> (<code>n &amp; 1</code>), shift <code>result</code> left to make room and drop the bit in,
+    then shift <code>n</code> right to expose the next bit. The first bit taken gets pushed left 31 more times, so it ends up at the far left: the bits come out <b>reversed</b>.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>32-bit registers <small>(bit 31 on the left … bit 0 on the right)</small></h2>
+    <svg id="bitSvg"></svg>
+    <div class="legend">
+      <span class="lg-one">1 bit</span>
+      <span class="lg-zero">0 bit</span>
+      <span class="lg-cur">bit being moved now</span>
+      <span class="lg-res">already placed in result (label = original bit #)</span>
+      <span class="lg-used">already taken from n</span>
+      <span class="lg-ghost">zero shifted in by <code>&gt;&gt;</code></span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code</h2>
+    <pre class="code" id="code"></pre>
+    <table class="ops" id="ops">
+      <tr data-l="5"><td>n &amp; 1</td><td>Reads the <b>lowest bit</b> of n: 1 if n is odd, 0 if it's even.</td></tr>
+      <tr data-l="5"><td>result &lt;&lt; 1</td><td>Shifts every bit of result <b>one place left</b> (×2), which leaves a 0 at the right end.</td></tr>
+      <tr data-l="5"><td>| bit</td><td>Writes the bit into that empty right-end slot.</td></tr>
+      <tr data-l="6"><td>n &gt;&gt;= 1</td><td>Shifts n <b>one place right</b> (÷2). The bit just used falls off, and the next one moves into the lowest slot.</td></tr>
+    </table>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(1)</span>
+        <span class="cxw">The loop always runs exactly 32 times (the bit width b), whatever the value of n, and each pass is a few O(1) bit operations. More generally that's O(b).</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(1)</span>
+        <span class="cxw">Only two integers, <code>n</code> and <code>result</code>, plus the loop counter. No arrays or strings.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h2>Variables</h2>
+      <div class="vars" id="vars"></div>
+      <div class="prog" id="prog"></div>
+    </div>
+    <div class="panel">
+      <h2>This step</h2>
+      <div class="formula" id="formula"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1500">Slow</option>
+      <option value="800" selected>Normal</option>
+      <option value="300">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">n (decimal, or 32 binary digits):</label>
+    <input type="text" id="input" value="43261596">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="43261596">43261596 (→ 964176192)</button>
+    <button class="preset" data-t="2147483644">2147483644 (→ 1073741822)</button>
+    <button class="preset" data-t="4294967293">4294967293 (→ 3221225471)</button>
+    <button class="preset" data-t="1">1 (→ 2147483648)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">class</span> <span class="ty">Solution</span>:`,
+  `    <span class="kw">def</span> <span class="fn">reverseBits</span>(self, n: <span class="ty">int</span>) -> <span class="ty">int</span>:`,
+  `        result = <span class="num">0</span>`,
+  `        <span class="kw">for</span> _ <span class="kw">in</span> range(<span class="num">32</span>):`,
+  `            result = (result &lt;&lt; <span class="num">1</span>) | (n &amp; <span class="num">1</span>)`,
+  `            n &gt;&gt;= <span class="num">1</span>`,
+  `        <span class="kw">return</span> result`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+const bits32 = v => { const b = []; for (let p = 0; p < 32; p++) b.push(Math.floor(v / 2 ** p) % 2); return b; }; // b[p] = bit p
+const bin = v => bits32(v).reverse().join('').replace(/(.{8})(?!$)/g, '$1 ');
+let N0 = 0, steps = [], idx = 0, timer = null;
+
+function parse(str) {
+  const t = str.trim().replace(/[\s_]/g, '');
+  let v;
+  if (/^0b[01]{1,32}$/.test(t)) v = parseInt(t.slice(2), 2);
+  else if (/^[01]{32}$/.test(t)) v = parseInt(t, 2);
+  else if (/^\d+$/.test(t)) v = Number(t);
+  else throw new Error('enter a whole number (0 to 4294967295) or exactly 32 binary digits');
+  if (!Number.isSafeInteger(v) || v < 0 || v > 4294967295) throw new Error('n must be between 0 and 4294967295 (32 bits)');
+  return v;
+}
+
+// Arithmetic instead of JS bitwise ops, because JS bitwise is signed 32-bit.
+function simulate(n0) {
+  const out = [];
+  let n = n0, result = 0, t = 0;
+  const snap = (lines, msg, extra = {}) => out.push({lines, msg, n, result, t, ...extra});
+
+  snap([3], `<b>result = 0</b>. n = ${n0} is <b>${bin(n0)}</b> in binary. We'll move its bits one at a time, starting from the <b>right</b> end.`);
+  for (t = 0; t < 32; t++) {
+    const bit = n % 2, before = result;
+    result = result * 2 + bit;
+    snap([4, 5], `<span class="round">round ${t + 1} / 32</span>n &amp; 1 = <b>${bit}</b> (originally bit ${t} of n). ` +
+      `Shift result left to make room, then drop the ${bit} in at the right → result = <b>${result}</b>.`,
+      {phase: 'take', bit, before});
+    n = Math.floor(n / 2);
+    snap([6], `<span class="round">round ${t + 1} / 32</span><b>n &gt;&gt;= 1</b>: that bit falls off the right end of n, and n's next bit (originally bit ${t + 1}) is now the lowest one.` +
+      (t === 31 ? ' All 32 bits have been moved.' : ''), {phase: 'shift', bit});
+  }
+  snap([7], `Done. Bit k of n ended up at bit 31 − k of result. Return <b>${result}</b> = <b>${bin(result)}</b>.`, {final: true});
+  return out;
+}
+
+const W = 760, H = 330, LEFT = 118, CW = 19, CH = 24;
+const colX = c => LEFT + c * CW + Math.floor(c / 8) * 6;    // c = 0 is bit 31 (left)
+const Y_ORIG = 46, Y_N = 140, Y_RES = 250;
+
+function cell(c, y, v, cls) {
+  return `<g class="bit ${cls}"><rect x="${colX(c)}" y="${y}" width="${CW - 2}" height="${CH}"/>` +
+    `<text x="${colX(c) + (CW - 2) / 2}" y="${y + CH / 2 + 1}">${v}</text></g>`;
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', s.lines.includes(k + 1)));
+  document.getElementById('msg').innerHTML = s.msg;
+  [...document.querySelectorAll('#ops tr')].forEach(r => r.classList.toggle('on', s.lines.includes(+r.dataset.l) && !s.final));
+
+  const orig = bits32(N0), nb = bits32(s.n), rb = bits32(s.result);
+  // how many bits have been taken from n / placed into result at this snapshot
+  const taken = s.final ? 32 : s.phase === 'take' ? s.t + 1 : s.phase === 'shift' ? s.t + 1 : 0;
+  const shifted = s.final ? 32 : s.phase === 'shift' ? s.t + 1 : s.phase === 'take' ? s.t : 0;   // times n has been >>'d
+  const curOrig = s.phase ? s.t : null;
+
+  let h = '';
+  // labels
+  h += `<text class="rowlab" x="8" y="${Y_ORIG + 16}">original n</text><text class="rowsub" x="8" y="${Y_ORIG + 32}">(never changes)</text>`;
+  h += `<text class="rowlab" x="8" y="${Y_N + 16}">n</text><text class="rowsub" x="8" y="${Y_N + 32}">slides right →</text>`;
+  h += `<text class="rowlab" x="8" y="${Y_RES + 16}">result</text><text class="rowsub" x="8" y="${Y_RES + 32}">← slides left</text>`;
+  // bit index labels
+  for (let c = 0; c < 32; c++) {
+    if (c % 4 === 0 || c === 31) h += `<text class="ix" x="${colX(c) + (CW - 2) / 2}" y="${Y_ORIG - 8}">${31 - c}</text>`;
+  }
+  // final mirror lines (behind cells)
+  if (s.final) {
+    for (let k = 0; k < 32; k++) if (orig[k]) {
+      const c1 = 31 - k, c2 = k;
+      h += `<line class="mirror" x1="${colX(c1) + 8}" y1="${Y_ORIG + CH}" x2="${colX(c2) + 8}" y2="${Y_RES}"/>`;
+    }
+  }
+  // original row
+  for (let c = 0; c < 32; c++) {
+    const k = 31 - c, v = orig[k];
+    let cls = v ? 'one' : 'zero';
+    if (k === curOrig && !s.final) cls += ' cur';
+    else if (k < taken && !s.final) cls = 'used';
+    h += cell(c, Y_ORIG, v, cls);
+  }
+  // n row
+  for (let c = 0; c < 32; c++) {
+    const p = 31 - c, origin = p + shifted, v = nb[p];
+    let cls = origin > 31 ? 'ghost' : v ? 'one' : 'zero';
+    if (p === 0 && s.phase === 'take') cls += ' cur';
+    h += cell(c, Y_N, v, cls);
+  }
+  // result row
+  for (let c = 0; c < 32; c++) {
+    const p = 31 - c, v = rb[p];
+    let cls = 'ghost', sub = '';
+    if (p < taken) {
+      cls = v ? 'res1' : 'res0';
+      const origin = taken - 1 - p;
+      sub = `<text class="org" x="${colX(c) + (CW - 2) / 2}" y="${Y_RES + CH + 11}">${origin}</text>`;
+      if (p === 0 && s.phase === 'take') cls += ' cur';
+    }
+    h += cell(c, Y_RES, v, cls) + sub;
+  }
+  if (taken > 0) h += `<text class="rowsub" x="8" y="${Y_RES + CH + 11}" fill="#15803d">from bit #</text>`;
+  // move arrow for the current bit: n bit 0 → result bit 0
+  if (s.phase === 'take') {
+    const x = colX(31) + 8;
+    h += `<path class="move" marker-end="url(#ah)" d="M ${x} ${Y_N + CH + 4} L ${x} ${Y_RES - 6}"/>`;
+    h += `<text class="dir" x="${x - 10}" y="${(Y_N + Y_RES) / 2 + 10}" text-anchor="end">n &amp; 1 = ${s.bit} → into result</text>`;
+  }
+  if (s.phase === 'shift') {
+    h += `<text class="dir" x="${colX(31) + 22}" y="${Y_N + 16}" text-anchor="start">↘</text>`;
+    h += `<text class="dir" x="${colX(16)}" y="${Y_N - 10}">everything moves one place right; the lowest bit falls off</text>`;
+  }
+  // arrow from original bit to where it sits in n (current)
+  if (curOrig !== null && !s.final) {
+    const x1 = colX(31 - curOrig) + 8, x2 = colX(31) + 8;
+    h += `<path class="move" style="stroke-dasharray:4 3;opacity:.6" d="M ${x1} ${Y_ORIG + CH + 2} C ${x1} ${Y_ORIG + 70}, ${x2} ${Y_N - 40}, ${x2} ${Y_N - 2}"/>`;
+  }
+  document.getElementById('bitSvg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+  document.getElementById('bitSvg').innerHTML =
+    `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker></defs>` + h;
+
+  // variables
+  const hotT = s.lines.includes(5) && !s.final, hotN = s.lines.includes(6);
+  document.getElementById('vars').innerHTML = [
+    ['round', s.phase ? `${s.t + 1}/32` : '–', false], ['n', s.n, hotN], ['n & 1', s.n % 2, false], ['result', s.result, hotT],
+  ].map(([k, v, on]) => `<div class="var ${on ? 'on' : ''}"><div class="k">${k}</div><div class="val">${v}</div></div>`).join('');
+  document.getElementById('prog').innerHTML = `Bits moved: <b>${taken}</b> / 32<div class="bar"><i style="width:${taken / 32 * 100}%"></i></div>`;
+
+  // formula
+  let f = '';
+  if (s.phase === 'take') {
+    f = `result = (result &lt;&lt; 1) | (n &amp; 1)<br>` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (${s.before} &lt;&lt; 1) | ${s.bit}<br>` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = ${s.before * 2} | ${s.bit} = <b>${s.result}</b>`;
+  } else if (s.phase === 'shift') {
+    const prev = s.n * 2 + s.bit;
+    f = `n = ${prev} &gt;&gt; 1 = <b>${s.n}</b><br><span style="color:#8a837a">(same as ${prev} // 2)</span>`;
+  } else if (s.final) {
+    f = `n      = ${bin(N0)}<br>result = <span class="g">${bin(s.result)}</span>`;
+  } else {
+    f = `n = ${bin(N0)}`;
+  }
+  document.getElementById('formula').innerHTML = f;
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${s.result}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  try { N0 = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}.`;
+    return;
+  }
+  steps = simulate(N0);
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
