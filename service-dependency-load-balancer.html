@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Service Dependency Load Balancer — Memoized DFS + Min-Heap Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:6px 0 0;color:#57534e;font-size:15px;line-height:1.5}
+  .phases{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .ph{font:600 12px sans-serif;padding:4px 10px;border-radius:12px;background:#efebe4;color:#a8a29e}
+  .ph.on{background:var(--amber);color:#fff}
+  .ph.done{background:var(--green-soft);color:#166534}
+  .wrap{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .panel h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+
+  #graph{width:100%;height:400px;display:block}
+  .layer{font:600 10px sans-serif;fill:#c0b9ae}
+  .gedge{stroke:#d6d3d1;stroke-width:2;fill:none}
+  .gedge.cur{stroke:var(--amber);stroke-width:4}
+  .gedge.dim{stroke:#ece9e3;stroke-dasharray:4 4}
+  .svc rect{fill:#fff;stroke:#a8a29e;stroke-width:2;rx:10;transition:fill .3s,stroke .3s}
+  .svc text.n{font:700 13px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink)}
+  .svc text.l{font:700 10px sans-serif;text-anchor:middle;fill:#166534}
+  .svc.visiting rect{fill:var(--blue-soft);stroke:var(--blue)}
+  .svc.active rect{fill:var(--amber-soft);stroke:var(--amber);stroke-width:4}
+  .svc.memo rect{fill:var(--green-soft);stroke:var(--green)}
+  .svc.hit rect{fill:var(--green-soft);stroke:var(--green);stroke-width:5}
+  .svc.unreach rect{fill:var(--gray-soft);stroke:var(--gray);stroke-dasharray:5 4}
+  .svc.unreach text.n{fill:#a8a29e}
+  .svc.booted rect{fill:#44403c;stroke:#44403c}
+  .svc.booted text.n{fill:#fff}
+  .svc.booted text.l{fill:#d6d3d1}
+  .svc.popnow rect{fill:var(--amber);stroke:#b45309;stroke-width:3}
+  .svc.popnow text.n{fill:#fff}
+  .svc.unlisted rect{stroke-dasharray:3 3}
+  .ord{font:700 11px sans-serif;fill:#fff}
+  .ordbg{fill:var(--green)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:14px;height:12px;border-radius:4px;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-vis::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-act::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-memo::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-un::before{background:var(--gray-soft);border-color:var(--gray)!important;border-style:dashed!important}
+  .lg-boot::before{background:#44403c;border-color:#44403c!important}
+  .lg-arrow{color:var(--muted)}
+  .lg-arrow::before{display:none!important}
+
+  .msg{margin-top:12px;padding:12px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;line-height:1.5;min-height:52px}
+  .set{font-family:Menlo,monospace;font-size:13px;background:#fff;border:1px solid #e7e5e4;border-radius:6px;padding:0 5px}
+
+  pre.code{margin:0;font:11.5px/1.45 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow:auto;max-height:640px}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.45em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:24px;text-align:right;margin-right:10px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.str{color:#15803d}.cm{color:#a8a29e}
+
+  .idea{margin-top:12px;font-size:13.5px;line-height:1.55;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 150px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 13px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:12.5px;padding:5px 10px;border-radius:6px;background:var(--blue-soft);border:1px solid #bfdbfe;animation:pop .25s}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .frame .t{display:block;font-weight:400;color:#57534e;font-size:11.5px;margin-top:2px}
+  .memo{width:100%;border-collapse:collapse;font-size:13px}
+  .memo th{font:600 11px sans-serif;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+  .memo td{padding:4px 6px;border-bottom:1px solid #f0eee9;font-family:Menlo,monospace;vertical-align:top}
+  .memo td.ld{font-weight:700;color:#166534;text-align:center}
+  .memo tr.new td{background:var(--green-soft)}
+  .memo tr.hit td{background:#bbf7d0}
+  .heap{display:flex;flex-direction:column;gap:4px;min-height:34px}
+  .hi{display:flex;justify-content:space-between;font-family:Menlo,monospace;font-size:13px;padding:4px 10px;border-radius:6px;background:var(--blue-soft);border:2px solid var(--blue);animation:pop .25s}
+  .hi.min{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+  .hi.new{box-shadow:0 0 0 3px #bfdbfe}
+  .sub{font:600 11px sans-serif;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em}
+  .boot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:32px}
+  .bt{font:700 12.5px Menlo,monospace;padding:4px 8px;border-radius:6px;background:#44403c;color:#fff}
+  .bt.new{background:var(--amber);animation:pop .35s}
+  .arr{color:var(--muted)}
+  .empty{color:var(--muted);font-style:italic;font-size:13.5px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 13px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s;word-break:break-word}
+  @keyframes pop{from{transform:scale(.9);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  textarea{font:12.5px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:100%;min-height:54px;resize:vertical}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Service Dependency Load Balancer — memoized DFS + min-heap</h1>
+  <p>For each service reachable from the entrypoint, collect the <b>set</b> of everything it depends on, directly or indirectly. Its <b>load</b> is the size of that set;
+    shared dependencies are counted once because it's a set. Then push every <code>(load, name)</code> into a min-heap and pop them all to get the boot order.</p>
+  <div class="phases" id="phases"></div>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Dependency graph <small>(arrow = "depends on" · services with no dependencies at the bottom)</small></h2>
+    <svg id="graph"></svg>
+    <div class="legend">
+      <span class="lg-act">current call</span>
+      <span class="lg-vis">waiting on a dependency (in <code>visiting</code>)</span>
+      <span class="lg-memo">done: in <code>memo</code> (load shown)</span>
+      <span class="lg-un">unreachable from entrypoint</span>
+      <span class="lg-boot">booted (#order)</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (the given solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>Why a set?</b> <code>api</code> reaches <code>db</code> through both <code>user</code> and <code>orders</code>. Adding to a set ignores the duplicate, so <code>db</code> is counted once and api's load is 3, not 4.<br>
+      <b>Why memo?</b> Each service's set is computed once. The next time it's needed, for example db from a second parent or in the heap loop, it's returned immediately.<br>
+      <b>Bonus:</b> if A depends on B, then A's set contains B plus all of B's set, so load(A) &gt; load(B). That means sorting by load always boots dependencies before the services that need them.
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(V·(V+E) + V log V)</span>
+        <span class="cxw">V = reachable services, E = dependency edges between them. Each service is expanded once thanks to memo, but merging a child's set can copy up to V names per edge. The heap adds V pushes and V pops at O(log V) each. Parsing the input is linear in its length.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(V²)</span>
+        <span class="cxw">memo stores a set for every service, and each set can hold up to V names. adj, the heap, the boot order and the recursion stack (depth ≤ V) are O(V + E).</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack <small>(partial <code>transitive</code> set)</small></h2><div class="stack" id="stack"></div></div>
+    <div class="panel"><h2><code>memo</code> <small>(service → its dependency set)</small></h2><table class="memo" id="memo"></table></div>
+    <div class="panel">
+      <h2>Min-heap <small>(sorted view, smallest first)</small></h2>
+      <div class="heap" id="heap"></div>
+      <div class="sub">boot_order</div>
+      <div class="boot" id="boot"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1700">Slow</option>
+      <option value="1050" selected>Normal</option>
+      <option value="500">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">services (JSON list), entrypoint:</label>
+    <textarea id="input">["gateway=auth,billing,logging", "auth=db,cache", "billing=db,tax_engine", "tax_engine=db", "cache=", "db=", "logging=", "analytics=db,logging"], "gateway"</textarea>
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t='["gateway=auth,billing,logging", "auth=db,cache", "billing=db,tax_engine", "tax_engine=db", "cache=", "db=", "logging=", "analytics=db,logging"], "gateway"'>#1 (→ cache, db, logging, tax_engine, auth, billing, gateway)</button>
+    <button class="preset" data-t='["api=user,orders", "user=db", "orders=db", "db="], "api"'>#2 diamond (→ db, orders, user, api)</button>
+    <button class="preset" data-t='["web=api,cdn", "api=db"], "web"'>unlisted deps (→ cdn, db, api, web)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">import</span> heapq`,
+  `<span class="kw">from</span> typing <span class="kw">import</span> Dict, List, Set`,
+  ``,
+  ``,
+  `<span class="kw">def</span> <span class="fn">get_boot_order</span>(services: <span class="ty">List</span>[<span class="ty">str</span>], entrypoint: <span class="ty">str</span>) -> <span class="ty">List</span>[<span class="ty">str</span>]:`,
+  `    adj: <span class="ty">Dict</span>[<span class="ty">str</span>, <span class="ty">List</span>[<span class="ty">str</span>]] = {}`,
+  ``,
+  `    <span class="kw">for</span> entry <span class="kw">in</span> services:`,
+  `        name, raw_deps = entry.split(<span class="str">"="</span>, 1)`,
+  `        deps = [d.strip() <span class="kw">for</span> d <span class="kw">in</span> raw_deps.split(<span class="str">","</span>) <span class="kw">if</span> d.strip()] <span class="kw">if</span> raw_deps <span class="kw">else</span> []`,
+  `        adj[name] = deps`,
+  ``,
+  `    <span class="cm"># Ensure entrypoint exists in the graph even if omitted from services</span>`,
+  `    <span class="kw">if</span> entrypoint <span class="kw">not in</span> adj:`,
+  `        <span class="kw">return</span> [entrypoint]`,
+  ``,
+  `    memo: <span class="ty">Dict</span>[<span class="ty">str</span>, <span class="ty">Set</span>[<span class="ty">str</span>]] = {}`,
+  ``,
+  `    <span class="kw">def</span> <span class="fn">get_transitive_deps</span>(node: <span class="ty">str</span>, visiting: <span class="ty">Set</span>[<span class="ty">str</span>]) -> <span class="ty">Set</span>[<span class="ty">str</span>]:`,
+  `        <span class="kw">if</span> node <span class="kw">in</span> memo:`,
+  `            <span class="kw">return</span> memo[node]`,
+  ``,
+  `        transitive: <span class="ty">Set</span>[<span class="ty">str</span>] = set()`,
+  `        visiting.add(node)`,
+  ``,
+  `        <span class="kw">for</span> dep <span class="kw">in</span> adj.get(node, []):`,
+  `            <span class="kw">if</span> dep == node <span class="kw">or</span> dep <span class="kw">in</span> visiting:`,
+  `                <span class="kw">continue</span>`,
+  `            transitive.add(dep)`,
+  `            transitive.update(get_transitive_deps(dep, visiting))`,
+  ``,
+  `        visiting.remove(node)`,
+  `        memo[node] = transitive`,
+  `        <span class="kw">return</span> transitive`,
+  ``,
+  `    reachable_deps = get_transitive_deps(entrypoint, set())`,
+  `    reachable_services = reachable_deps | {entrypoint}`,
+  ``,
+  `    heap: <span class="ty">List</span>[<span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>]] = []`,
+  `    <span class="kw">for</span> svc <span class="kw">in</span> reachable_services:`,
+  `        load = len(get_transitive_deps(svc, set()))`,
+  `        heapq.heappush(heap, (load, svc))`,
+  ``,
+  `    boot_order: <span class="ty">List</span>[<span class="ty">str</span>] = []`,
+  `    <span class="kw">while</span> heap:`,
+  `        _, svc = heapq.heappop(heap)`,
+  `        boot_order.append(svc)`,
+  ``,
+  `    <span class="kw">return</span> boot_order`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+const PHASES = ['1 · parse', '2 · collect dependency sets', '3 · push to heap', '4 · pop boot order'];
+let SERVICES = [], ENTRY = '', steps = [], idx = 0, timer = null, layoutPos = {}, allNodes = [], fullAdj = {};
+
+function parse(str) {
+  const v = JSON.parse('[' + str.trim() + ']');
+  if (v.length !== 2 || !Array.isArray(v[0]) || typeof v[1] !== 'string') throw new Error('expected ["a=b,c", ...], "entrypoint"');
+  if (v[0].some(s => typeof s !== 'string' || !s.includes('='))) throw new Error('each service must be a string like "name=dep1,dep2" or "name="');
+  if (v[0].length > 14) throw new Error('keep it to 14 services or fewer so the graph fits');
+  return v;
+}
+
+const fmt = set => `<span class="set">{${[...set].sort().join(', ')}}</span>`;
+const pyParse = entry => {
+  const k = entry.indexOf('=');
+  const name = entry.slice(0, k), raw = entry.slice(k + 1);
+  const deps = raw ? raw.split(',').map(d => d.trim()).filter(d => d) : [];
+  return [name, raw, deps];
+};
+
+function simulate() {
+  const out = [], adj = {}, memo = {}, stack = [], heap = [], boot = [];
+  let phase = 0, reachable = null, parsed = 0;
+  const snap = (lines, msg, extra = {}) => out.push({
+    lines, msg, phase, parsed, adj: JSON.parse(JSON.stringify(adj)),
+    memo: Object.fromEntries(Object.entries(memo).map(([k, s]) => [k, [...s]])),
+    stack: stack.map(f => ({node: f.node, trans: [...f.trans]})),
+    reachable: reachable ? [...reachable] : null, heap: heap.map(h => [...h]), boot: [...boot], ...extra
+  });
+
+  // ---- phase 1: parse ----
+  for (const entry of SERVICES) {
+    const [name, raw, deps] = pyParse(entry);
+    adj[name] = deps; parsed++;
+    snap([8, 9, 10, 11], `Parse <b>"${entry}"</b> → adj["${name}"] = ` +
+      (deps.length ? `<b>[${deps.map(d => `"${d}"`).join(', ')}]</b>.` : `<b>[]</b> (nothing after "=", so no dependencies).`));
+  }
+  if (!(ENTRY in adj)) {
+    snap([14], `"${ENTRY}" is <b>not</b> a key in adj.`);
+    snap([15], `Return <b>["${ENTRY}"]</b>.`, {final: true, result: [ENTRY]});
+    return out;
+  }
+  snap([14], `"${ENTRY}" is in adj, so continue.`);
+  phase = 1;
+  snap([17], `<b>memo = {}</b>. It will cache each service's full dependency set once it's computed.`);
+  snap([36], `Collect everything <b>${ENTRY}</b> needs: call <b>get_transitive_deps("${ENTRY}", set())</b>.`);
+
+  function gtd(node, visiting, from) {
+    const f = {node, trans: new Set()};
+    stack.push(f);
+    if (node in memo) {
+      snap([20, 21], `<b>${node}</b> is already in memo → return ${fmt(memo[node])} immediately, with no re-traversal. ` +
+        (from ? `This is the shared-dependency case: ${node} was already reached through another service.` : ''), {hit: node, edge: from ? [from, node] : null});
+      stack.pop();
+      return memo[node];
+    }
+    visiting.add(node);
+    const unlisted = !(node in adj);
+    snap([20, 23, 24], `Enter <b>${node}</b>: not in memo yet. Start <b>transitive = {}</b> and add ${node} to <b>visiting</b>.` +
+      (unlisted ? ` (${node} has no "${node}=" entry, so adj.get gives [] and it has no dependencies.)` : ''),
+      {edge: from ? [from, node] : null});
+    for (const dep of (adj[node] || [])) {
+      if (dep === node || visiting.has(dep)) {
+        snap([27, 28], `${dep} is ${dep === node ? node + ' itself' : 'already in visiting (a cycle)'} → skip.`);
+        continue;
+      }
+      f.trans.add(dep);
+      snap([29, 30], `<b>${dep}</b> is a direct dependency of ${node}: add it → transitive = ${fmt(f.trans)}. Now recurse to collect <b>${dep}</b>'s dependencies.`,
+        {edge: [node, dep]});
+      const sub = gtd(dep, visiting, node);
+      const dupes = [...sub].filter(x => f.trans.has(x));
+      sub.forEach(x => f.trans.add(x));
+      snap([30], `Back in <b>${node}</b>: ${dep} needs ${fmt(sub)}. Merge → transitive = ${fmt(f.trans)}.` +
+        (dupes.length ? ` <b>${dupes.join(', ')}</b> ${dupes.length > 1 ? 'were' : 'was'} already in the set, so ${dupes.length > 1 ? 'they are' : 'it is'} <b>not counted twice</b>.` : ''),
+        {edge: [node, dep]});
+    }
+    visiting.delete(node);
+    memo[node] = new Set(f.trans);
+    snap([32, 33, 34], `${node} is done: memo["${node}"] = ${fmt(memo[node])}, so <b>load(${node}) = ${memo[node].size}</b>. Remove it from visiting and return.`,
+      {fresh: node});
+    stack.pop();
+    return memo[node];
+  }
+
+  const rd = gtd(ENTRY, new Set(), null);
+  reachable = new Set([...rd, ENTRY]);
+  const unreach = Object.keys(adj).filter(s => !reachable.has(s));
+  snap([36, 37], `reachable_services = ${ENTRY}'s set ∪ {${ENTRY}} = ${fmt(reachable)} (<b>${reachable.size}</b> services).` +
+    (unreach.length ? ` <b>${unreach.join(', ')}</b> ${unreach.length > 1 ? 'are' : 'is'} never reached, so ${unreach.length > 1 ? 'they are' : 'it is'} ignored.` : ''));
+
+  phase = 2;
+  snap([39], `<b>heap = []</b>. Python compares tuples item by item: load first, then name for ties.`);
+  const order = [...reachable].sort();   // Python set order is arbitrary; it doesn't change the result
+  for (const svc of order) {
+    const load = memo[svc].size;
+    heap.push([load, svc]);
+    heap.sort((x, y) => x[0] - y[0] || (x[1] < y[1] ? -1 : 1));
+    snap([40, 41, 42], `<b>${svc}</b>: get_transitive_deps hits memo → load = <b>${load}</b>. Push <b>(${load}, "${svc}")</b>.`,
+      {hit: svc, newHeap: svc});
+  }
+
+  phase = 3;
+  snap([44], `<b>boot_order = []</b>. Now pop everything: the smallest (load, name) comes out first each time.`);
+  while (heap.length) {
+    const [load, svc] = heap.shift();
+    const tie = heap.length && heap[0][0] === load;
+    boot.push(svc);
+    snap([45, 46, 47], `Pop <b>(${load}, "${svc}")</b> → boot_order gets <b>${svc}</b> (#${boot.length}).` +
+      (tie ? ` ${heap[0][1]} also has load ${load}, but "${svc}" comes first alphabetically.` : ''), {popped: svc});
+  }
+  snap([49], `Return <b>[${boot.map(s => `"${s}"`).join(', ')}]</b>.`, {final: true, result: [...boot]});
+  return out;
+}
+
+// ---------- layout: services with no deps at the bottom, each layer above depends on lower ones ----------
+const W = 680, H = 400;
+function computeLayout() {
+  fullAdj = {};
+  SERVICES.forEach(e => { const [n, , d] = pyParse(e); fullAdj[n] = d; });
+  const nodes = new Set(Object.keys(fullAdj));
+  Object.values(fullAdj).forEach(ds => ds.forEach(d => nodes.add(d)));
+  if (!nodes.has(ENTRY)) nodes.add(ENTRY);
+  allNodes = [...nodes];
+  const ht = {};
+  const height = (n, seen = new Set()) => {
+    if (n in ht) return ht[n];
+    if (seen.has(n)) return 0;
+    seen.add(n);
+    const ds = (fullAdj[n] || []).filter(d => d !== n);
+    ht[n] = ds.length ? 1 + Math.max(...ds.map(d => height(d, seen))) : 0;
+    return ht[n];
+  };
+  allNodes.forEach(n => height(n));
+  const maxH = Math.max(0, ...Object.values(ht));
+  const layers = {};
+  allNodes.forEach(n => (layers[ht[n]] ||= []).push(n));
+  layoutPos = {};
+  for (const h in layers) {
+    const row = layers[h].sort();
+    const y = maxH === 0 ? H / 2 : H - 40 - h * (H - 90) / maxH;
+    row.forEach((n, k) => { layoutPos[n] = {x: 60 + (k + 0.5) * (W - 80) / row.length, y, h: +h}; });
+  }
+  layoutPos._maxH = maxH;
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', s.lines.includes(k + 1)));
+  document.getElementById('msg').innerHTML = s.msg;
+  document.getElementById('phases').innerHTML = PHASES.map((p, k) =>
+    `<span class="ph ${k === s.phase && !s.final ? 'on' : k < s.phase || s.final ? 'done' : ''}">${p}</span>`).join('');
+
+  // which nodes are known so far (parse phase reveals them gradually)
+  const known = new Set();
+  Object.entries(s.adj).forEach(([n, ds]) => { known.add(n); ds.forEach(d => known.add(d)); });
+  const visiting = new Set(s.stack.map(f => f.node));
+  const top = s.stack.length ? s.stack[s.stack.length - 1].node : null;
+  const reach = s.reachable ? new Set(s.reachable) : null;
+  const bootIdx = {}; s.boot.forEach((b, k) => bootIdx[b] = k + 1);
+
+  let h = `<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#a8a29e"/></marker>` +
+    `<marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker></defs>`;
+  for (let L = 0; L <= layoutPos._maxH; L++) {
+    const y = layoutPos._maxH === 0 ? H / 2 : H - 40 - L * (H - 90) / layoutPos._maxH;
+    h += `<text class="layer" x="4" y="${y + 4}">${L === 0 ? 'no deps' : 'level ' + L}</text>`;
+  }
+  const NW = 96, NH = 34;
+  Object.entries(s.adj).forEach(([n, ds]) => ds.forEach(d => {
+    const p = layoutPos[n], q = layoutPos[d];
+    if (!p || !q) return;
+    const cur = s.edge && s.edge[0] === n && s.edge[1] === d;
+    const dim = reach && (!reach.has(n));
+    const dx = q.x - p.x, dy = q.y - p.y, L = Math.hypot(dx, dy) || 1;
+    // clip to rectangle edges (approx.)
+    const t1 = Math.min((NW / 2) / Math.abs(dx || 1e-9), (NH / 2) / Math.abs(dy || 1e-9));
+    const x1 = p.x + dx * t1, y1 = p.y + dy * t1, x2 = q.x - dx * (t1 + 4 / L), y2 = q.y - dy * (t1 + 4 / L);
+    h += `<line class="gedge ${cur ? 'cur' : dim ? 'dim' : ''}" marker-end="url(#${cur ? 'ahA' : 'ah'})" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  }));
+  allNodes.forEach(n => {
+    if (!known.has(n)) return;
+    const p = layoutPos[n];
+    let cls = '';
+    if (bootIdx[n]) cls = n === s.popped ? 'popnow' : 'booted';
+    else if (n === s.hit) cls = 'hit';
+    else if (n === top) cls = 'active';
+    else if (visiting.has(n)) cls = 'visiting';
+    else if (n in s.memo) cls = 'memo';
+    else if (reach && !reach.has(n)) cls = 'unreach';
+    if (!(n in s.adj) && s.parsed === SERVICES.length) cls += ' unlisted';
+    const ld = n in s.memo ? `<text class="l" x="${p.x}" y="${p.y + NH / 2 + 12}">load ${s.memo[n].length}</text>` : '';
+    const ord = bootIdx[n] ? `<circle class="ordbg" cx="${p.x + NW / 2 - 2}" cy="${p.y - NH / 2 + 2}" r="10"/><text class="ord" x="${p.x + NW / 2 - 2}" y="${p.y - NH / 2 + 6}" text-anchor="middle">${bootIdx[n]}</text>` : '';
+    h += `<g class="svc ${cls}"><rect x="${p.x - NW / 2}" y="${p.y - NH / 2}" width="${NW}" height="${NH}"/><text class="n" x="${p.x}" y="${p.y}">${n}</text>${ld}${ord}</g>`;
+  });
+  const svg = document.getElementById('graph');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = h;
+
+  // call stack
+  document.getElementById('stack').innerHTML = s.stack.length
+    ? s.stack.map((f, k) => `<div class="frame ${k === s.stack.length - 1 ? 'top' : ''}">get_transitive_deps("${f.node}")` +
+        `<span class="t">transitive = {${f.trans.sort().join(', ')}}</span></div>`).join('')
+    : '<span class="empty">no active calls</span>';
+
+  // memo
+  const keys = Object.keys(s.memo);
+  document.getElementById('memo').innerHTML = keys.length
+    ? '<tr><th>service</th><th>dependency set</th><th>load</th></tr>' + keys.map(k =>
+        `<tr class="${k === s.fresh ? 'new' : k === s.hit ? 'hit' : ''}"><td>${k}</td><td>{${s.memo[k].sort().join(', ')}}</td><td class="ld">${s.memo[k].length}</td></tr>`).join('')
+    : '<tr><td class="empty" style="font-family:inherit">{} empty</td></tr>';
+
+  // heap + boot order
+  document.getElementById('heap').innerHTML = s.heap.length
+    ? s.heap.map((t, k) => `<div class="hi ${k === 0 && s.phase === 3 ? 'min' : ''} ${t[1] === s.newHeap ? 'new' : ''}"><span>("${t[1]}")</span><span>load ${t[0]}</span></div>`).join('')
+    : '<span class="empty">empty</span>';
+  document.getElementById('boot').innerHTML = s.boot.length
+    ? s.boot.map((b, k) => (k ? '<span class="arr">→</span>' : '') + `<span class="bt ${b === s.popped ? 'new' : ''}">${b}</span>`).join('')
+    : '<span class="empty">[]</span>';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${JSON.stringify(s.result)}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  try { [SERVICES, ENTRY] = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}.`;
+    return;
+  }
+  computeLayout();
+  steps = simulate();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target.type === 'text')) return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
