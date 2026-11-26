@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>323. Number of Connected Components in an Undirected Graph — Union-Find Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:6px 0 0;color:#57534e;font-size:15px;line-height:1.5}
+  .wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .panel h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+
+  #viz{width:100%;height:370px;display:block}
+  .title{font:700 11px sans-serif;letter-spacing:.06em;text-transform:uppercase;fill:var(--muted)}
+  .divider{stroke:var(--line);stroke-width:1.5;stroke-dasharray:4 4}
+  .gedge{stroke-width:3;stroke-linecap:round}
+  .gedge.pending{stroke:#e7e5e4;stroke-dasharray:5 5}
+  .gedge.union{stroke:var(--green)}
+  .gedge.skip{stroke:var(--red);stroke-dasharray:6 4;opacity:.75}
+  .gedge.cur{stroke:var(--amber);stroke-width:6}
+  .elab{font:600 10px Menlo,monospace;fill:#a8a29e;text-anchor:middle;dominant-baseline:central}
+  .gnode circle,.fnode circle{stroke:#57534e;stroke-width:2.5;transition:fill .3s}
+  .gnode text,.fnode text{font:700 16px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .gnode.path circle,.fnode.path circle{stroke:var(--amber);stroke-width:4}
+  .gnode.x circle,.fnode.x circle{stroke:var(--amber);stroke-width:6}
+  .fnode.root circle{stroke-width:3.5}
+  .rootlab{font:600 9px sans-serif;fill:var(--muted);text-anchor:middle}
+  .fptr{stroke:#78716c;stroke-width:2;fill:none}
+  .fptr.changed{stroke:var(--amber);stroke-width:3.5}
+  .fptr.joined{stroke:var(--green);stroke-width:3.5}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:3px;background:currentColor}
+  .lg-pend{color:#d6d3d1}.lg-cur{color:var(--amber)}.lg-union{color:var(--green)}.lg-skip{color:var(--red)}
+  .lg-color::before{display:none!important}
+  .legend .lt{color:var(--muted)}
+
+  .msg{margin-top:12px;padding:12px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15.5px;line-height:1.5;min-height:52px}
+  .msg .tag{display:inline-block;font:700 11px sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#b45309;background:#fff;border:1px solid #fde68a;border-radius:10px;padding:1px 8px;margin-right:6px;vertical-align:1px}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.cm{color:#a8a29e}
+
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.55;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 128px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 14px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:18px}
+  .parr{display:grid;gap:4px;font-family:Menlo,monospace}
+  .parr .h{font:11px Menlo,monospace;color:var(--muted);text-align:center}
+  .parr .c{height:38px;display:flex;align-items:center;justify-content:center;border-radius:7px;border:2px solid #e7e5e4;font-weight:700;font-size:15px;transition:all .25s}
+  .parr .c.self{color:#a8a29e;font-weight:500}
+  .parr .c.changed{border-color:var(--amber);background:var(--amber-soft);animation:pop .35s}
+  .parr .c.joined{border-color:var(--green);background:var(--green-soft);animation:pop .35s}
+  .parr .lab{font:600 11px sans-serif;color:var(--muted);display:flex;align-items:center}
+  .pnote{font-size:12px;color:var(--muted);margin-top:8px}
+  .vars{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .var{background:#faf8f4;border-radius:8px;padding:6px 10px;font-family:Menlo,monospace}
+  .var .k{font-size:11px;color:var(--muted)}
+  .var .val{font-size:18px;font-weight:700}
+  .var.on{background:var(--amber-soft)}
+  .big{font:700 40px Menlo,monospace;color:var(--ink);line-height:1}
+  .big.dec{color:var(--green);animation:pop .4s}
+  .groups{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .grp .chip{min-width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:13px;border:2px solid #57534e;font:700 12px Menlo,monospace}
+  .grp .rl{font:11px sans-serif;color:var(--muted);margin-left:4px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 15px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.88);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:330px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>323. Number of Connected Components in an Undirected Graph — Union-Find</h1>
+  <p>Start with every node as its own component (<b>n</b> of them). For each edge, find the <b>root</b> of both ends. Different roots mean the edge
+    connects two separate components: <b>merge</b> them and subtract 1. The same root means they're already connected, so <b>skip</b> the edge.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Graph (left) and Union-Find forest (right) <small>· fill color = which component a node is in</small></h2>
+    <svg id="viz"></svg>
+    <div class="legend">
+      <span class="lg-pend">edge not processed yet</span>
+      <span class="lg-cur">current edge / find path</span>
+      <span class="lg-union">edge merged two components</span>
+      <span class="lg-skip">edge skipped (already connected)</span>
+      <span class="lt">forest: arrow = child → parent, top of each tree = root</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>Why roots?</b> Each component is stored as a tree of <code>parent</code> pointers, and the root names the component.
+      Two nodes are connected exactly when <code>find</code> gives them the same root.<br>
+      <b>Union</b> just points one root at the other (<code>parent[root_b] = root_a</code>), which merges the whole tree in one step.<br>
+      <b>Path halving</b> (line 7): while walking up, each node is re-pointed to its grandparent, so later finds have shorter paths to climb.
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n + E·log n)</span>
+        <span class="cxw">E = number of edges. O(n) to build <code>parent</code>, then 2 finds per edge. With path halving alone each find is amortized O(log n). Adding union by rank as well brings it to O(α(n)), effectively constant.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(n)</span>
+        <span class="cxw">The <code>parent</code> list has one entry per node. <code>find</code> is iterative, so there's no recursion stack.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h2><code>parent</code> list</h2>
+      <div class="parr" id="parr"></div>
+      <div class="pnote">parent[i] == i (gray) means i is a root.</div>
+    </div>
+    <div class="panel">
+      <h2>Variables</h2>
+      <div class="vars" id="vars"></div>
+    </div>
+    <div class="panel">
+      <h2><code>components</code></h2>
+      <div class="big" id="comp"></div>
+      <div class="groups" id="groups"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1700">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="550">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">n, edges:</label>
+    <input type="text" id="input" value="7, [[0,1],[2,3],[1,2],[3,0],[5,6]]">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="5, [[0,1],[1,2],[3,4]]">#1 (→ 2)</button>
+    <button class="preset" data-t="5, [[0,1],[1,2],[2,3],[3,4]]">#2 (→ 1)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">class</span> <span class="ty">Solution</span>:`,
+  `    <span class="kw">def</span> <span class="fn">countComponents</span>(self, n: <span class="ty">int</span>, edges: <span class="ty">list</span>[<span class="ty">list</span>[<span class="ty">int</span>]]) -> <span class="ty">int</span>:`,
+  `        parent = list(range(n))`,
+  ``,
+  `        <span class="kw">def</span> <span class="fn">find</span>(x: <span class="ty">int</span>) -> <span class="ty">int</span>:`,
+  `            <span class="kw">while</span> parent[x] != x:`,
+  `                parent[x] = parent[parent[x]]  <span class="cm"># path halving</span>`,
+  `                x = parent[x]`,
+  `            <span class="kw">return</span> x`,
+  ``,
+  `        components = n`,
+  `        <span class="kw">for</span> a, b <span class="kw">in</span> edges:`,
+  `            root_a, root_b = <span class="fn">find</span>(a), <span class="fn">find</span>(b)`,
+  `            <span class="kw">if</span> root_a != root_b:`,
+  `                parent[root_b] = root_a`,
+  `                components -= 1`,
+  `        <span class="kw">return</span> components`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+const PAL = ['#bfdbfe', '#bbf7d0', '#fbcfe8', '#ddd6fe', '#fed7aa', '#a5f3fc', '#fecaca', '#d9f99d', '#e9d5ff', '#c7d2fe'];
+let N = 0, E = [], steps = [], idx = 0, timer = null;
+
+function parse(str) {
+  const v = JSON.parse('[' + str.trim() + ']');
+  if (v.length !== 2 || !Number.isInteger(v[0]) || !Array.isArray(v[1])) throw new Error('expected n, [[a,b], ...]');
+  const [n, edges] = v;
+  if (n < 1 || n > 10) throw new Error('n must be 1–10 so the drawing fits');
+  for (const e of edges) {
+    if (!Array.isArray(e) || e.length !== 2 || !e.every(x => Number.isInteger(x) && x >= 0 && x < n)) throw new Error(`each edge must be [a, b] with 0 ≤ a, b < ${n}`);
+  }
+  if (edges.length > 14) throw new Error('keep it to 14 edges or fewer');
+  return v;
+}
+
+const rootOf = p => p.map((_, i) => { let x = i; while (p[x] !== x) x = p[x]; return x; });
+
+function simulate() {
+  const out = [], parent = [...Array(N).keys()], status = E.map(() => 'pending');
+  let comps = 0, ei = null, a = null, b = null, rootA = null, rootB = null, fx = null, fpath = [], who = null;
+  const snap = (lines, msg, extra = {}) => out.push({
+    lines, msg, parent: [...parent], status: [...status], comps, ei, a, b, rootA, rootB, fx, fpath: [...fpath], who, ...extra
+  });
+  const T = t => `<span class="tag">${t}</span>`;
+
+  snap([3], `<b>parent = list(range(${N}))</b>: every node points to itself, so each one is its own root and its own component.`);
+  comps = N;
+  snap([11], `<b>components = ${N}</b>. No edges are used yet, so there are ${N} separate components.`);
+
+  function find(x, label) {
+    who = label; fx = x; fpath = [x];
+    while (parent[x] !== x) {
+      const p = parent[x], g = parent[p];
+      parent[x] = g;
+      const changed = g !== p;
+      snap([6, 7, 8], `${T(`find(${label === 'a' ? a : b})`)}parent[${x}] = ${p} ≠ ${x}, so ${x} is not a root. ` +
+        (changed ? `<b>Path halving:</b> point ${x} at its grandparent → parent[${x}] = <b>${g}</b>. ` : `Its grandparent is also ${g}, so the pointer stays. `) +
+        `Move up: x = <b>${g}</b>.`, {changed: changed ? x : null, fxNext: g});
+      x = g; fx = x; fpath.push(x);
+    }
+    snap([6, 9], `${T(`find(${label === 'a' ? a : b})`)}parent[${x}] == ${x}, so <b>${x} is the root</b>. Return ${x}.`);
+    return x;
+  }
+
+  for (let k = 0; k < E.length; k++) {
+    ei = k; [a, b] = E[k]; rootA = rootB = null; fx = null; fpath = []; who = null;
+    status[k] = 'cur';
+    snap([12], `Next edge: <b>(${a}, ${b})</b>. Are ${a} and ${b} already in the same component?`);
+    rootA = find(a, 'a');
+    rootB = find(b, 'b');
+    fx = null; fpath = []; who = null;
+    snap([13], `root_a = <b>${rootA}</b>, root_b = <b>${rootB}</b>.`);
+    if (rootA !== rootB) {
+      parent[rootB] = rootA;
+      status[k] = 'union';
+      snap([14, 15], `${rootA} ≠ ${rootB}: <b>different components</b>. Merge them by pointing root ${rootB} at root ${rootA}: parent[${rootB}] = <b>${rootA}</b>. ` +
+        `Everything under ${rootB} is now under ${rootA}.`, {joined: rootB});
+      comps--;
+      snap([16], `Two components became one → <b>components = ${comps}</b>.`, {dec: true});
+    } else {
+      status[k] = 'skip';
+      snap([14], `${rootA} == ${rootB}: ${a} and ${b} are <b>already connected</b>, so this edge only closes a loop. Skip it; components stays ${comps}.`);
+    }
+  }
+  ei = null; a = b = rootA = rootB = null;
+  snap([17], `All edges processed. Return <b>${comps}</b>.`, {final: true});
+  return out;
+}
+
+// ---------- drawing ----------
+const W = 780, H = 370, MID = 380;
+function graphPos(i) {
+  if (N === 1) return {x: MID / 2, y: H / 2 + 10};
+  const ang = -Math.PI / 2 + i * 2 * Math.PI / N, r = Math.min(135, 40 + N * 16);
+  return {x: MID / 2 + r * Math.cos(ang), y: H / 2 + 12 + r * Math.sin(ang)};
+}
+function forestPos(parent) {
+  const kids = parent.map(() => []), roots = [];
+  parent.forEach((p, i) => (p === i ? roots.push(i) : kids[p].push(i)));
+  const pos = {}; let leaf = 0, maxD = 0;
+  const walk = (u, d) => {
+    maxD = Math.max(maxD, d);
+    if (!kids[u].length) { pos[u] = {xi: leaf++, d}; return; }
+    kids[u].sort((x, y) => x - y).forEach(c => walk(c, d + 1));
+    pos[u] = {xi: kids[u].reduce((s, c) => s + pos[c].xi, 0) / kids[u].length, d};
+  };
+  roots.forEach(r => { walk(r, 0); leaf += 0.4; });
+  const left = MID + 30, right = W - 25, span = Math.max(leaf - 1.4, 1);
+  const rowH = Math.min(78, (H - 90) / Math.max(maxD, 1));
+  for (const u in pos) {
+    pos[u].x = leaf <= 1.4 ? (left + right) / 2 : left + (pos[u].xi / span) * (right - left);
+    pos[u].y = 70 + pos[u].d * rowH;
+  }
+  return pos;
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', s.lines.includes(k + 1)));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  const roots = rootOf(s.parent);
+  const rootList = [...new Set(roots)].sort((x, y) => x - y);
+  const colorOf = i => PAL[roots[i] % PAL.length];
+  const onPath = new Set(s.fpath);
+
+  let h = `<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#78716c"/></marker>` +
+    `<marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>` +
+    `<marker id="ahG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/></marker></defs>`;
+  h += `<text class="title" x="12" y="20">Graph</text><text class="title" x="${MID + 16}" y="20">Union-Find forest (parent pointers)</text>`;
+  h += `<line class="divider" x1="${MID}" y1="10" x2="${MID}" y2="${H - 10}"/>`;
+
+  // graph edges
+  E.forEach(([u, v], k) => {
+    const p = graphPos(u), q = graphPos(v);
+    h += `<line class="gedge ${s.status[k]}" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/>`;
+  });
+  // graph nodes
+  for (let i = 0; i < N; i++) {
+    const p = graphPos(i);
+    const cls = (s.ei !== null && (i === s.a || i === s.b)) ? 'path' : '';
+    h += `<g class="gnode ${cls}"><circle cx="${p.x}" cy="${p.y}" r="21" style="fill:${colorOf(i)}"/><text x="${p.x}" y="${p.y}">${i}</text></g>`;
+  }
+
+  // forest
+  const fp = forestPos(s.parent);
+  for (let i = 0; i < N; i++) {
+    if (s.parent[i] === i) continue;
+    const c = fp[i], p = fp[s.parent[i]];
+    const dx = p.x - c.x, dy = p.y - c.y, L = Math.hypot(dx, dy) || 1;
+    const x1 = c.x + dx / L * 20, y1 = c.y + dy / L * 20, x2 = p.x - dx / L * 22, y2 = p.y - dy / L * 22;
+    const cls = s.changed === i ? 'changed' : s.joined === i ? 'joined' : '';
+    const mk = cls === 'changed' ? 'ahA' : cls === 'joined' ? 'ahG' : 'ah';
+    h += `<line class="fptr ${cls}" marker-end="url(#${mk})" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  }
+  for (let i = 0; i < N; i++) {
+    const p = fp[i];
+    let cls = s.parent[i] === i ? 'root' : '';
+    if (i === s.fx) cls += ' x'; else if (onPath.has(i)) cls += ' path';
+    h += `<g class="fnode ${cls}"><circle cx="${p.x}" cy="${p.y}" r="19" style="fill:${colorOf(i)}"/><text x="${p.x}" y="${p.y}">${i}</text></g>`;
+    if (s.parent[i] === i) h += `<text class="rootlab" x="${p.x}" y="${p.y - 25}">root</text>`;
+  }
+  const svg = document.getElementById('viz');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = h;
+
+  // parent array
+  const pa = document.getElementById('parr');
+  pa.style.gridTemplateColumns = `56px repeat(${N}, minmax(30px, 1fr))`;
+  let ph = `<span class="lab">i</span>` + s.parent.map((_, i) => `<span class="h">${i}</span>`).join('');
+  ph += `<span class="lab">parent[i]</span>` + s.parent.map((p, i) => {
+    let cls = p === i ? 'self' : '';
+    if (s.changed === i) cls += ' changed';
+    if (s.joined === i) cls += ' joined';
+    return `<span class="c ${cls}" style="background:${s.changed === i || s.joined === i ? '' : colorOf(i)}">${p}</span>`;
+  }).join('');
+  pa.innerHTML = ph;
+
+  // variables
+  const v = [['edge (a, b)', s.ei === null ? '–' : `(${s.a}, ${s.b})`, s.lines.includes(12)],
+             ['x (in find)', s.fx === null ? '–' : s.fx, s.lines.includes(7)],
+             ['root_a', s.rootA === null ? '–' : s.rootA, s.lines.includes(13)],
+             ['root_b', s.rootB === null ? '–' : s.rootB, s.lines.includes(13)]];
+  document.getElementById('vars').innerHTML = v.map(([k, val, on]) =>
+    `<div class="var ${on ? 'on' : ''}"><div class="k">${k}</div><div class="val">${val}</div></div>`).join('');
+
+  // components
+  document.getElementById('comp').className = 'big' + (s.dec ? ' dec' : '');
+  document.getElementById('comp').textContent = s.comps;
+  document.getElementById('groups').innerHTML = s.lines.includes(3) ? '' : rootList.map(r => {
+    const members = [...Array(N).keys()].filter(i => roots[i] === r);
+    return `<div class="grp">` + members.map(i => `<span class="chip" style="background:${PAL[r % PAL.length]}">${i}</span>`).join('') +
+      `<span class="rl">root ${r}</span></div>`;
+  }).join('');
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${s.comps}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  try { [N, E] = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}.`;
+    return;
+  }
+  steps = simulate();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
