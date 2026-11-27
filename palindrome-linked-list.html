@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>234. Palindrome Linked List — Fast &amp; Slow Pointers + Reverse Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --purple:#7c3aed; --purple-soft:#ede9fe;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #svg{width:100%;height:320px;display:block}
+  .phasebar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .ph{font:600 12px sans-serif;padding:4px 10px;border-radius:12px;background:#f3f0ea;color:#a8a29e}
+  .ph.on{background:var(--ink);color:#fff}
+  .ph.done{background:var(--green-soft);color:#166534}
+
+  .link{stroke:#94a3b8;stroke-width:2.5;fill:none}
+  .link.rev{stroke:var(--purple)}
+  .link.changed{stroke:var(--amber);stroke-width:5}
+  .nullstub{font:600 11px Menlo,monospace;fill:#a8a29e;text-anchor:middle}
+  .nullstub.changed{fill:#b45309}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font:700 17px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.h1 circle{fill:#eff6ff;stroke:#93c5fd}
+  .node.h2 circle{fill:#fff7ed;stroke:#fdba74}
+  .node.cur circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
+  .node.ok circle{fill:var(--green-soft);stroke:var(--green);stroke-width:4}
+  .node.bad circle{fill:var(--red-soft);stroke:var(--red);stroke-width:5}
+  .node.mid circle{stroke:var(--blue);stroke-width:5}
+  .ix{font:11px Menlo,monospace;fill:#a8a29e;text-anchor:middle}
+  .none rect{fill:#faf8f4;stroke:#d6d3d1;stroke-width:2;stroke-dasharray:4 3}
+  .none text{font:600 13px Menlo,monospace;fill:#a8a29e;text-anchor:middle;dominant-baseline:central}
+  .tag text{font:700 11.5px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:#fff}
+  .pairline{stroke-width:2;stroke-dasharray:4 4}
+  .halflabel{font:600 12px sans-serif;text-anchor:middle}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-h1::before{background:#eff6ff;border-color:#93c5fd!important}
+  .lg-h2::before{background:#fff7ed;border-color:#fdba74!important}
+  .lg-cur::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-ok::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-bad::before{background:var(--red-soft);border-color:var(--red)!important}
+  .lg-rev::before{background:var(--purple);border-color:var(--purple)!important;border-radius:2px!important;height:4px!important;vertical-align:3px!important}
+
+  pre.code{margin:0;font:12px/1.45 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto;max-height:560px;overflow-y:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.45em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.cm{color:#a8a29e;font-style:italic}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px;line-height:1.45}
+  .msg sub,.frame sub,.chain sub{font-size:10px;color:#a8a29e}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .idea p{margin:0 0 6px}
+  .idea p:last-child{margin:0}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:6px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;line-height:1.55}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber)}
+  .frame .fn{font-weight:700;color:#0369a1}
+  .frame .kv{display:inline-block;margin-right:12px}
+  .frame .kv b{color:var(--ink)}
+  .chain{font:13.5px Menlo,monospace;padding:7px 10px;border-radius:8px;background:#faf8f4;margin-bottom:8px;line-height:1.5}
+  .chain .lbl{font:600 11px sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block}
+  .pairs{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .pair{font:700 13px Menlo,monospace;padding:5px 9px;border-radius:8px;border:2px solid}
+  .pair.ok{background:var(--green-soft);border-color:var(--green);color:#166534}
+  .pair.bad{background:var(--red-soft);border-color:var(--red);color:#9f1239}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;animation:pop .4s}
+  .answer.yes{background:var(--green-soft);border:2px solid var(--green);color:#166534}
+  .answer.no{background:var(--red-soft);border:2px solid var(--red);color:#9f1239}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:240px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>234. Palindrome Linked List — Fast &amp; Slow Pointers + Reverse Second Half</h1>
+  <p>A singly linked list can't be read backwards, so we <b>make</b> the second half backwards. Find the middle with slow/fast, reverse from the middle, walk both halves inward comparing values, then reverse again to put the list back.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Linked list <span style="text-transform:none;letter-spacing:0">(arrows = the real <code>.next</code> pointers; they change during the reversal)</span></h2>
+    <div class="phasebar" id="phases"></div>
+    <svg id="svg"></svg>
+    <div class="legend">
+      <span class="lg-h1">first half</span>
+      <span class="lg-h2">second half (from slow)</span>
+      <span class="lg-cur">node being worked on</span>
+      <span class="lg-rev">reversed .next pointer</span>
+      <span class="lg-ok">pair matched</span>
+      <span class="lg-bad">pair mismatched</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <p><b>1. Find the middle.</b> Same as Middle of the Linked List: slow +1, fast +2, so slow stops at the middle (the 2nd middle for even lengths).</p>
+      <p><b>2. Reverse from slow.</b> Flip each <code>.next</code> to point backwards. The second half can now be walked from the <b>end</b> towards the middle.</p>
+      <p><b>3. Compare.</b> One pointer walks from <code>head</code> and one from the old tail. Stop when <code>second_half</code> runs out. The node before the middle still points to the middle (now the reversed tail), so for odd lengths the middle node gets compared <b>with itself</b>.</p>
+      <p><b>4. Restore.</b> Reversing again puts every arrow back, so the caller's list is unchanged.</p>
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n)</span>
+        <span class="cxw">n = number of nodes. Finding the middle takes n/2 rounds, each reversal touches n/2 nodes, and the compare does at most n/2 pairs. That's a constant number of linear passes.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(1)</span>
+        <span class="cxw">Just a handful of pointers (slow, fast, prev, curr, next, first_half, second_half). The list is reversed in place, with no array copy and no recursion.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack (locals of each frame)</h2><div class="stack" id="stack"></div></div>
+    <div class="panel">
+      <h2>What Python sees right now</h2>
+      <div id="chains"></div>
+      <div id="pairs"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1800">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="550">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">head:</label>
+    <input type="text" id="input" value="[9,7,4,4,7,9]">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="[1,2,2,1]">#1 (→ true)</button>
+    <button class="preset" data-t="[1,2]">#2 (→ false)</button>
+    <button class="preset" data-t="[2,4,6,4,2]">[2,4,6,4,2] (→ true)</button>
+    <button class="preset" data-t="[0,3,5,5,0]">[0,3,5,5,0] (→ false)</button>
+    <button class="preset" data-t="[5,4,7,9,4,5]">[5,4,7,9,4,5] (→ false)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">palindrome</span>(head):`,
+  `    <span class="cm"># Initialize slow and fast pointers to the head of the linked list</span>`,
+  `    slow = head`,
+  `    fast = head`,
+  ``,
+  `    <span class="cm"># Find the middle of the linked list using the slow and fast pointers</span>`,
+  `    <span class="kw">while</span> fast <span class="kw">and</span> fast.next:`,
+  `        <span class="cm"># move slow one step forward</span>`,
+  `        slow = slow.next`,
+  `        <span class="cm"># move fast two steps forward</span>`,
+  `        fast = fast.next.next`,
+  ``,
+  `    <span class="cm"># Reverse the second half of the linked list starting from the middle node</span>`,
+  `    revert_data = <span class="fn">reverse_linked_list</span>(slow)`,
+  ``,
+  `    <span class="cm"># Compare the first half of the linked list with the reversed second half of the linked list</span>`,
+  `    check = <span class="fn">compare_two_halves</span>(head, revert_data)`,
+  ``,
+  `    <span class="cm"># Re-reverse the second half of the linked list to restore the original linked list</span>`,
+  `    <span class="fn">reverse_linked_list</span>(revert_data)`,
+  ``,
+  `    <span class="cm"># Return True if the linked list is a palindrome, else False</span>`,
+  `    <span class="kw">if</span> check:`,
+  `        <span class="kw">return</span> <span class="bool">True</span>`,
+  `    <span class="kw">return</span> <span class="bool">False</span>`,
+  ``,
+  ``,
+  `<span class="kw">def</span> <span class="fn">compare_two_halves</span>(first_half, second_half):`,
+  `    <span class="cm"># Compare the corresponding nodes of the first and second halves of the linked list</span>`,
+  `    <span class="kw">while</span> first_half <span class="kw">and</span> second_half:`,
+  `        <span class="kw">if</span> first_half.val != second_half.val:`,
+  `            <span class="kw">return</span> <span class="bool">False</span>`,
+  `        <span class="kw">else</span>:`,
+  `            first_half = first_half.next`,
+  `            second_half = second_half.next`,
+  `    <span class="kw">return</span> <span class="bool">True</span>`,
+  ``,
+  `<span class="kw">def</span> <span class="fn">reverse_linked_list</span>(slow_ptr):`,
+  `    <span class="cm"># Initialize prev and next as None and curr as the head of the list to reverse</span>`,
+  `    prev = <span class="bool">None</span>`,
+  `    next = <span class="bool">None</span>`,
+  `    curr = slow_ptr`,
+  ``,
+  `    <span class="kw">while</span> curr <span class="kw">is not</span> <span class="bool">None</span>:`,
+  `        <span class="cm"># Store the next node before changing the pointer</span>`,
+  `        next = curr.next`,
+  `        <span class="cm"># Reverse the pointer of the current node</span>`,
+  `        curr.next = prev`,
+  `        <span class="cm"># Move prev and curr one step forward</span>`,
+  `        prev = curr`,
+  `        curr = next`,
+  ``,
+  `    <span class="cm"># prev is the new head of the reversed list</span>`,
+  `    <span class="kw">return</span> prev`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+const PHASES = ['1 · find middle', '2 · reverse 2nd half', '3 · compare halves', '4 · restore', 'return'];
+const COLORS = {head: '#57534e', slow: '#3b82f6', fast: '#f59e0b', revert_data: '#7c3aed',
+  prev: '#7c3aed', curr: '#f59e0b', next: '#64748b', first_half: '#3b82f6', second_half: '#f59e0b'};
+const SHOW = {palindrome: ['head', 'slow', 'fast', 'revert_data'], reverse_linked_list: ['prev', 'curr', 'next'], compare_two_halves: ['first_half', 'second_half']};
+
+let vals = [], steps = [], idx = 0, timer = null;
+const nm = i => i === null ? 'None' : `${vals[i]}<sub>[${i}]</sub>`;
+
+function simulate(a) {
+  vals = a;
+  const n = a.length, nx = a.map((_, i) => i + 1 < n ? i + 1 : null);
+  const out = [], frames = [], pairs = [];
+  let phase = 0, mid = null;
+  const snap = (line, msg, ex = {}) => out.push({
+    line, msg, phase, mid, nx: [...nx], pairs: pairs.map(p => ({...p})),
+    frames: frames.map(f => ({fn: f.fn, vars: {...f.vars}})), ...ex
+  });
+
+  const F = {fn: 'palindrome', vars: {head: 0}};
+  frames.push(F);
+  snap(1, `Call <b>palindrome(head)</b> on a list of <b>${n}</b> node${n === 1 ? '' : 's'}.`);
+  F.vars.slow = 0; snap(3, `<b>slow = head</b> → ${nm(0)}.`);
+  F.vars.fast = 0; snap(4, `<b>fast = head</b> → ${nm(0)}.`);
+
+  // ---- phase 1: find middle
+  for (;;) {
+    const f = F.vars.fast, go = f !== null && nx[f] !== null;
+    if (!go) {
+      mid = F.vars.slow;
+      snap(7, (f === null ? `<b>fast is None</b> (even length)` : `<b>fast.next is None</b> (odd length)`) +
+        ` → stop. <b>slow = ${nm(mid)}</b> is the middle: everything from here on is the second half.`);
+      break;
+    }
+    snap(7, `fast = ${nm(f)} and fast.next = ${nm(nx[f])} both exist → loop.`);
+    const s0 = F.vars.slow; F.vars.slow = nx[s0];
+    snap(9, `🐢 <b>slow = slow.next</b>: ${nm(s0)} → <b>${nm(F.vars.slow)}</b>.`);
+    const f1 = nx[f]; F.vars.fast = nx[f1];
+    snap(11, `🐇 <b>fast = fast.next.next</b>: ${nm(f)} → ${nm(f1)} → <b>${nm(F.vars.fast)}</b>.`);
+  }
+
+  // ---- reverse helper (detailed = show every line)
+  function reverse(start, detailed, callLine) {
+    const R = {fn: 'reverse_linked_list', vars: {slow_ptr: start}};
+    frames.push(R);
+    snap(38, `Enter <b>reverse_linked_list(${nm(start)})</b>.` + (detailed ? '' : ` This time it un-flips the arrows, one node per step.`));
+    R.vars.prev = null; R.vars.next = null;
+    if (detailed) { snap(40, `<b>prev = None</b>. The first node we flip becomes the new tail, so it must point to None.`); snap(41, `<b>next = None</b> (just a placeholder).`); }
+    R.vars.curr = start;
+    snap(42, `<b>curr = slow_ptr = ${nm(start)}</b>.`);
+    for (;;) {
+      const c = R.vars.curr;
+      if (detailed) snap(44, c === null ? `curr is None → done flipping.` : `curr = ${nm(c)} is not None → flip it.`);
+      if (c === null) break;
+      R.vars.next = nx[c];
+      if (detailed) snap(46, `<b>next = curr.next = ${nm(nx[c])}</b>. Save it now, because the next line overwrites curr.next and we'd lose the rest of the list.`);
+      const old = nx[c];
+      nx[c] = R.vars.prev;
+      snap(48, `<b>curr.next = prev</b>: ${nm(c)} used to point to ${nm(old)}, now it points <b>back</b> to <b>${nm(R.vars.prev)}</b>.` +
+        (detailed ? '' : ` Then prev = ${nm(c)}, curr = ${nm(R.vars.next)}.`), {changed: c});
+      R.vars.prev = c;
+      if (detailed) snap(50, `<b>prev = curr = ${nm(c)}</b>.`);
+      R.vars.curr = R.vars.next;
+      if (detailed) snap(51, `<b>curr = next = ${nm(R.vars.curr)}</b>. Step forward using the saved pointer.`);
+    }
+    const p = R.vars.prev;
+    snap(54, `<b>return prev = ${nm(p)}</b>, the head of the ${detailed ? 'reversed' : 'restored'} part.`);
+    frames.pop();
+    return p;
+  }
+
+  phase = 1;
+  snap(14, `Reverse the second half starting at <b>slow = ${nm(mid)}</b>.`);
+  const rev = reverse(mid, true);
+  F.vars.revert_data = rev;
+  snap(14, `<b>revert_data = ${nm(rev)}</b>, the old tail and now the head of the reversed second half. Notice ${mid > 0 ? `${nm(mid - 1)} still points to ${nm(mid)}` : 'the head is the middle'}.`);
+
+  // ---- phase 3: compare
+  phase = 2;
+  snap(17, `Compare the halves: <b>compare_two_halves(head, revert_data)</b>.`);
+  const C = {fn: 'compare_two_halves', vars: {first_half: 0, second_half: rev}};
+  frames.push(C);
+  snap(28, `first_half starts at ${nm(0)} (the front), second_half at ${nm(rev)} (the back). They walk <b>towards each other</b>.`);
+  let result = true;
+  for (;;) {
+    const a1 = C.vars.first_half, b1 = C.vars.second_half;
+    if (a1 === null || b1 === null) {
+      snap(30, `${b1 === null ? '<b>second_half is None</b>' : '<b>first_half is None</b>'} → every pair matched, so stop.`);
+      break;
+    }
+    snap(30, `first_half = ${nm(a1)} and second_half = ${nm(b1)} → compare them.` + (a1 === b1 ? ` Same node! That's the middle of an odd-length list, compared with itself.` : ''));
+    if (vals[a1] !== vals[b1]) {
+      pairs.push({a: a1, b: b1, ok: false});
+      snap(31, `${vals[a1]} != ${vals[b1]} → <b>mismatch</b>.`, {cmp: [a1, b1]});
+      snap(32, `<b>return False</b>. Not a palindrome. (The list is still restored afterwards.)`, {cmp: [a1, b1]});
+      result = false;
+      break;
+    }
+    pairs.push({a: a1, b: b1, ok: true});
+    snap(31, `${vals[a1]} == ${vals[b1]} ✓ → go to the else branch.`, {cmp: [a1, b1]});
+    C.vars.first_half = nx[a1];
+    snap(34, `<b>first_half = ${nm(nx[a1])}</b> (moves right).`);
+    C.vars.second_half = nx[b1];
+    snap(35, `<b>second_half = ${nm(nx[b1])}</b> (moves left, along the reversed arrows).`);
+  }
+  if (result) snap(36, `<b>return True</b>. All compared pairs were equal.`);
+  frames.pop();
+  F.vars.check = result;
+  snap(17, `<b>check = ${result ? 'True' : 'False'}</b>.`);
+
+  // ---- phase 4: restore
+  phase = 3;
+  snap(20, `Be polite: undo the reversal with <b>reverse_linked_list(revert_data)</b> so the caller gets their list back.`);
+  reverse(rev, false);
+  snap(20, `List restored: every arrow points forward again.`);
+
+  phase = 4;
+  snap(23, `<b>if check</b> → check is <b>${result}</b>.`);
+  snap(result ? 24 : 25, result ? `<b>return True</b>: [${a.join(',')}] reads the same both ways.` : `<b>return False</b>: [${a.join(',')}] is not a palindrome.`,
+    {final: true, result});
+  return out;
+}
+
+const W = 700, H = 320, Y = 160, R = 22;
+let xs = [], noneX = 0;
+function layout() {
+  const n = vals.length, step = Math.min(84, (W - 130) / Math.max(n, 1));
+  const x0 = (W - 70 - step * (n - 1)) / 2;
+  xs = vals.map((_, i) => x0 + i * step);
+  noneX = W - 40;
+  document.getElementById('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function chainFrom(start, nx) {
+  if (start === null || start === undefined) return 'None';
+  const seen = new Set(), parts = [];
+  let c = start;
+  while (c !== null && !seen.has(c)) { seen.add(c); parts.push(nm(c)); c = nx[c]; }
+  return parts.join(' → ') + ' → None';
+}
+
+function render() {
+  const s = steps[idx], n = vals.length;
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  const hlLine = codeEl.children[s.line - 1];
+  if (hlLine) { const pre = codeEl, top = hlLine.offsetTop - pre.offsetTop; if (top < pre.scrollTop || top > pre.scrollTop + pre.clientHeight - 30) pre.scrollTop = top - 120; }
+  document.getElementById('msg').innerHTML = s.msg;
+  document.getElementById('phases').innerHTML = PHASES.map((p, k) => `<span class="ph ${k === s.phase ? 'on' : k < s.phase ? 'done' : ''}">${p}</span>`).join('');
+
+  let h = `<defs>`;
+  [['ar', '#94a3b8'], ['arR', '#7c3aed'], ['arC', '#f59e0b']].forEach(([id, col]) =>
+    h += `<marker id="${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${col}"/></marker>`);
+  h += `</defs>`;
+
+  // half labels
+  if (s.mid !== null && s.mid !== undefined) {
+    if (s.mid > 0) h += `<text class="halflabel" fill="#60a5fa" x="${(xs[0] + xs[s.mid - 1]) / 2}" y="${H - 14}">first half</text>`;
+    h += `<text class="halflabel" fill="#fb923c" x="${(xs[s.mid] + xs[n - 1]) / 2}" y="${H - 14}">second half</text>`;
+  }
+
+  // links
+  s.nx.forEach((j, i) => {
+    const ch = s.changed === i;
+    if (j === null) {
+      h += `<line class="link ${ch ? 'changed' : ''}" x1="${xs[i]}" y1="${Y + R + 2}" x2="${xs[i]}" y2="${Y + R + 22}" marker-end="url(#${ch ? 'arC' : 'ar'})"/>`;
+      h += `<text class="nullstub ${ch ? 'changed' : ''}" x="${xs[i]}" y="${Y + R + 36}">None</text>`;
+    } else if (j === i + 1) {
+      h += `<line class="link ${ch ? 'changed' : ''}" x1="${xs[i] + R + 2}" y1="${Y}" x2="${xs[j] - R - 4}" y2="${Y}" marker-end="url(#${ch ? 'arC' : 'ar'})"/>`;
+    } else {
+      const x1 = xs[i] - 10, x2 = xs[j] + 10, yb = Y + R;
+      h += `<path class="link rev ${ch ? 'changed' : ''}" d="M${x1},${yb} Q${(x1 + x2) / 2},${yb + 62} ${x2},${yb + 3}" marker-end="url(#${ch ? 'arC' : 'arR'})"/>`;
+    }
+  });
+
+  // compare pair lines
+  s.pairs.forEach(p => { if (p.a !== p.b) h += `<path class="pairline" stroke="${p.ok ? '#16a34a' : '#e11d48'}" fill="none" d="M${xs[p.a]},${Y - R - 4} Q${(xs[p.a] + xs[p.b]) / 2},${Y - R - 30 - Math.abs(p.b - p.a) * 6} ${xs[p.b]},${Y - R - 4}"/>`; });
+
+  // nodes
+  const top = s.frames[s.frames.length - 1];
+  const okSet = new Set(), badSet = new Set();
+  s.pairs.forEach(p => (p.ok ? okSet : badSet).add(p.a) && (p.ok ? okSet : badSet).add(p.b));
+  vals.forEach((v, i) => {
+    let cls = s.mid === null || s.mid === undefined ? '' : i < s.mid ? 'h1' : 'h2';
+    if (s.phase >= 2 && okSet.has(i)) cls = 'ok';
+    if (badSet.has(i)) cls = 'bad';
+    if (s.phase === 0 && s.mid !== null && i === s.mid) cls = 'mid';
+    if (top && top.fn === 'reverse_linked_list' && top.vars.curr === i) cls = 'cur';
+    if (s.cmp && s.cmp.includes(i) && !badSet.has(i)) cls = 'ok';
+    h += `<g class="node ${cls}"><circle cx="${xs[i]}" cy="${Y}" r="${R}"/><text x="${xs[i]}" y="${Y}">${v}</text></g>`;
+    h += `<text class="ix" x="${xs[i] + R + 2}" y="${Y - R + 2}" text-anchor="start">${i}</text>`;
+  });
+  h += `<g class="none"><rect x="${noneX - 26}" y="${Y - 15}" width="52" height="30" rx="8"/><text x="${noneX}" y="${Y}">None</text></g>`;
+
+  // pointer tags: head always + top frame's pointers
+  const tags = {};
+  const addTag = (name, at) => { if (at === undefined) return; const k = at === null ? 'none' : at; (tags[k] = tags[k] || []).push(name); };
+  if (!s.final) {
+    addTag('head', 0);
+    if (top) (SHOW[top.fn] || []).filter(k => k !== 'head').forEach(k => addTag(k, top.vars[k]));
+  } else addTag('head', 0);
+  Object.entries(tags).forEach(([k, names]) => {
+    const x = k === 'none' ? noneX : xs[+k];
+    names.forEach((name, j) => {
+      const y = Y - R - 18 - j * 24 - (k === 'none' ? 0 : 0), tw = name.length * 7.4 + 14;
+      h += `<g class="tag"><rect x="${x - tw / 2}" y="${y - 10}" width="${tw}" height="20" rx="10" fill="${COLORS[name]}"/><text x="${x}" y="${y}">${name}</text></g>`;
+    });
+  });
+  document.getElementById('svg').innerHTML = h;
+
+  // call stack
+  const fmtv = v => v === undefined ? '' : v === true ? 'True' : v === false ? 'False' : nm(v);
+  document.getElementById('stack').innerHTML = s.frames.map((f, k) =>
+    `<div class="frame ${k === s.frames.length - 1 ? 'top' : ''}"><span class="fn">${f.fn}</span><br>` +
+    Object.entries(f.vars).filter(([, v]) => v !== undefined).map(([kk, v]) => `<span class="kv">${kk} = <b>${fmtv(v)}</b></span>`).join('') + `</div>`).join('')
+    || '<span class="empty">no active calls</span>';
+
+  // chains
+  const pal = s.frames.find(f => f.fn === 'palindrome');
+  let ch = `<div class="chain"><span class="lbl">following .next from head</span>${chainFrom(0, s.nx)}</div>`;
+  const rd = pal ? pal.vars.revert_data : undefined;
+  if (rd !== undefined && s.phase >= 1 && s.phase <= 2) ch += `<div class="chain"><span class="lbl">following .next from revert_data</span>${chainFrom(rd, s.nx)}</div>`;
+  if (top && top.fn === 'reverse_linked_list' && top.vars.prev !== undefined) ch += `<div class="chain"><span class="lbl">already flipped (from prev)</span>${chainFrom(top.vars.prev, s.nx)}</div>`;
+  document.getElementById('chains').innerHTML = ch;
+  document.getElementById('pairs').innerHTML = s.pairs.length
+    ? `<div class="chain" style="background:none;padding:0"><span class="lbl">compared pairs (front ↔ back)</span><div class="pairs">` +
+      s.pairs.map(p => `<span class="pair ${p.ok ? 'ok' : 'bad'}">${vals[p.a]}<sub>[${p.a}]</sub> ${p.ok ? '=' : '≠'} ${vals[p.b]}<sub>[${p.b}]</sub></span>`).join('') + `</div></div>`
+    : '';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer ${s.result ? 'yes' : 'no'}">return ${s.result ? 'True' : 'False'}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function parse(str) {
+  const a = JSON.parse(str.trim().startsWith('[') ? str : '[' + str + ']');
+  if (!Array.isArray(a) || !a.length) throw new Error('the list needs at least 1 node');
+  if (a.length > 9) throw new Error('keep it to 9 nodes or fewer so it fits');
+  if (a.some(v => !Number.isInteger(v))) throw new Error('values must be integers');
+  return a;
+}
+function load() {
+  stop();
+  let a;
+  try { a = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>[1,2,2,1]</code>.`;
+    return;
+  }
+  steps = simulate(a);
+  layout();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
