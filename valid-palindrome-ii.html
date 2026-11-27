@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>680. Valid Palindrome II — Two Pointers Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --purple:#7c3aed; --purple-soft:#ede9fe;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #svg{width:100%;height:400px;display:block}
+
+  .rowbg{fill:transparent;stroke:none}
+  .rowbg.active{fill:#fffbeb}
+  .rowlabel{font:700 13px sans-serif;fill:var(--ink)}
+  .rowsub{font:500 11.5px Menlo,monospace;fill:var(--muted)}
+  .cell rect{fill:#fff;stroke:#94a3b8;stroke-width:2.5;transition:all .25s}
+  .cell text{font:700 19px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink)}
+  .cell.out rect{fill:#faf8f4;stroke:#e7e2d8}
+  .cell.out text{fill:#d6d3d1}
+  .cell.del rect{fill:var(--gray-soft);stroke:var(--gray);stroke-dasharray:4 3}
+  .cell.del text{fill:#94a3b8}
+  .cell.cmp rect{fill:var(--amber-soft);stroke:var(--amber);stroke-width:4}
+  .cell.ok rect{fill:var(--green-soft);stroke:var(--green)}
+  .cell.ok text{fill:#166534}
+  .cell.bad rect{fill:var(--red-soft);stroke:var(--red);stroke-width:4}
+  .cell.bad text{fill:#9f1239}
+  .cell.mid rect{fill:#f8fafc;stroke:#94a3b8;stroke-dasharray:3 3}
+  .strike{stroke:var(--red);stroke-width:3}
+  .ix{font:10.5px Menlo,monospace;fill:#a8a29e;text-anchor:middle}
+  .tag text{font:700 11px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:#fff}
+  .verdict{font:700 13px sans-serif}
+  .verdict.t{fill:var(--green)} .verdict.f{fill:var(--red)} .verdict.s{fill:#a8a29e}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:14px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-cmp::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-ok::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-bad::before{background:var(--red-soft);border-color:var(--red)!important}
+  .lg-del::before{background:var(--gray-soft);border-color:var(--gray)!important;border-style:dashed!important}
+  .lg-out::before{background:#faf8f4;border-color:#e7e2d8!important}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.nu{color:#c2410c}.cm{color:#a8a29e;font-style:italic}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px;line-height:1.45}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .idea p{margin:0 0 6px}
+  .idea p:last-child{margin:0}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:6px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;line-height:1.55}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber)}
+  .frame .fn{font-weight:700;color:#0369a1}
+  .frame .kv{display:inline-block;margin-right:12px}
+  .cmpbox{font:14px Menlo,monospace;padding:8px 10px;border-radius:8px;background:#faf8f4;line-height:1.6;margin-bottom:8px}
+  .cmpbox .t{color:var(--green);font-weight:700} .cmpbox .fl{color:var(--red);font-weight:700}
+  .orbox{font:13.5px Menlo,monospace;padding:8px 10px;border-radius:8px;border:1px dashed var(--line);line-height:1.7}
+  .orbox .t{color:var(--green);font-weight:700} .orbox .fl{color:var(--red);font-weight:700} .orbox .sk{color:#a8a29e}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;animation:pop .4s}
+  .answer.yes{background:var(--green-soft);border:2px solid var(--green);color:#166534}
+  .answer.no{background:var(--red-soft);border:2px solid var(--red);color:#9f1239}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:220px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>680. Valid Palindrome II — Two Pointers (with one delete)</h1>
+  <p>Squeeze two pointers inward while the ends match. At the <b>first mismatch</b> you get one delete: try dropping the <b>left</b> char, or dropping the <b>right</b> char, and check whether what's left in between is a palindrome.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>The string <span style="text-transform:none;letter-spacing:0">(main scan on top; the two "delete one" options underneath)</span></h2>
+    <svg id="svg"></svg>
+    <div class="legend">
+      <span class="lg-cmp">being compared</span>
+      <span class="lg-ok">matched pair</span>
+      <span class="lg-bad">mismatch</span>
+      <span class="lg-del">deleted char</span>
+      <span class="lg-out">already matched by the main scan, so not re-checked</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <p><b>Why only check the inside?</b> Everything outside the mismatch has already matched in pairs, so it stays a palindrome whatever happens in the middle. Only <code>string[left..right]</code> still needs checking.</p>
+      <p><b>Why only two options?</b> At the first mismatch, <code>s[left] ≠ s[right]</code>, so one of these two characters <i>must</i> go. Deleting anything else leaves this bad pair in place. So we try deleting <code>s[left]</code> (check <code>left+1..right</code>) and deleting <code>s[right]</code> (check <code>left..right-1</code>).</p>
+      <p><b><code>or</code> short-circuits:</b> if option 1 already returns True, option 2 is never run.</p>
+      <p><b>Index ranges, not slices.</b> The helper takes <code>left, right</code> instead of copying <code>string[a:b]</code>, so no new strings are made.</p>
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n)</span>
+        <span class="cxw">n = len(string). The main scan plus at most two helper scans, each over the not-yet-checked middle (fewer than n chars), so at most about 3 × n/2 comparisons.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(1)</span>
+        <span class="cxw">Only integer indices. The helper gets <code>left/right</code> numbers rather than sliced copies, and the call depth is at most 2.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel"><h2>Comparison</h2><div id="cmp"></div><div id="or"></div><div id="answer"></div></div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1800">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="550">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">string:</label>
+    <input type="text" id="input" value="eabcbxae">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="aba">#1 "aba" (→ true)</button>
+    <button class="preset" data-t="abca">#2 "abca" (→ true)</button>
+    <button class="preset" data-t="abc">#3 "abc" (→ false)</button>
+    <button class="preset" data-t="madame">"madame" (→ true)</button>
+    <button class="preset" data-t="tebbem">"tebbem" (→ false)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">is_substring_palindrome</span>(string, left, right):`,
+  `    <span class="kw">while</span> left &lt; right:`,
+  `        <span class="kw">if</span> string[left] != string[right]:`,
+  `            <span class="kw">return</span> <span class="bool">False</span>`,
+  `        left += <span class="nu">1</span>`,
+  `        right -= <span class="nu">1</span>`,
+  `    `,
+  `    <span class="kw">return</span> <span class="bool">True</span>`,
+  ``,
+  ``,
+  `<span class="kw">def</span> <span class="fn">is_palindrome</span>(string):`,
+  `    left_index = <span class="nu">0</span>`,
+  `    right_index = <span class="fn">len</span>(string) - <span class="nu">1</span>`,
+  `    `,
+  `    <span class="kw">while</span> left_index &lt; right_index:`,
+  `        <span class="kw">if</span> string[left_index] != string[right_index]:`,
+  `            <span class="kw">return</span> (<span class="fn">is_substring_palindrome</span>(string, left_index + <span class="nu">1</span>, right_index) <span class="kw">or</span> `,
+  `                    <span class="fn">is_substring_palindrome</span>(string, left_index, right_index - <span class="nu">1</span>))`,
+  `        left_index += <span class="nu">1</span>`,
+  `        right_index -= <span class="nu">1</span>`,
+  `        `,
+  `    <span class="kw">return</span> <span class="bool">True</span>`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let S = '', steps = [], idx = 0, timer = null;
+const q = c => `'${c}'`;
+
+function simulate(s) {
+  S = s;
+  const n = s.length, out = [];
+  const main = {L: null, R: null, pairs: [], bad: null, cmp: null};
+  const opts = [null, null];        // option rows: {lo, hi, del, l, r, pairs, bad, cmp, status}
+  let frames = [], orState = null, active = 0;
+  const snap = (line, msg, ex = {}) => out.push({
+    line, msg, active,
+    main: {...main, pairs: [...main.pairs]},
+    opts: opts.map(o => o && {...o, pairs: [...o.pairs]}),
+    frames: frames.map(f => ({...f})), orState: orState && {...orState}, ...ex
+  });
+
+  frames.push({fn: 'is_palindrome', vars: `string="${s}"`});
+  snap(11, `Call <b>is_palindrome("${s}")</b>, length ${n}.`);
+  main.L = 0; snap(12, `<b>left_index = 0</b>.`);
+  main.R = n - 1; snap(13, `<b>right_index = len(string) - 1 = ${n - 1}</b>.`);
+
+  function sub(k, lo, hi, line) {
+    const o = opts[k] = {lo, hi, del: k === 0 ? lo - 1 : hi + 1, l: lo, r: hi, pairs: [], bad: null, cmp: null, status: 'running'};
+    active = k + 1;
+    frames.push({fn: 'is_substring_palindrome', vars: `left=${lo}, right=${hi}`});
+    snap(1, `Option ${k + 1}: <b>delete ${q(s[o.del])} at index ${o.del}</b>. Is <b>"${s.slice(lo, hi + 1)}"</b> (indices ${lo}..${hi}) a palindrome?`);
+    for (;;) {
+      frames[frames.length - 1].vars = `left=${o.l}, right=${o.r}`;
+      if (!(o.l < o.r)) {
+        o.cmp = null;
+        snap(2, `left ${o.l} &lt; right ${o.r}? <b>No</b>: the pointers met or crossed.`);
+        o.status = 'true';
+        snap(8, `<b>return True</b>: "${s.slice(lo, hi + 1)}" is a palindrome.`);
+        break;
+      }
+      snap(2, `left ${o.l} &lt; right ${o.r} → keep checking.`);
+      o.cmp = [o.l, o.r];
+      if (s[o.l] !== s[o.r]) {
+        o.bad = [o.l, o.r];
+        snap(3, `string[${o.l}] = ${q(s[o.l])} != string[${o.r}] = ${q(s[o.r])} → <b>mismatch</b>.`, {cmpv: [o.l, o.r, false]});
+        o.status = 'false';
+        snap(4, `<b>return False</b>. Deleting ${q(s[o.del])} isn't enough, and we've already used our one delete.`, {cmpv: [o.l, o.r, false]});
+        break;
+      }
+      snap(3, `string[${o.l}] = ${q(s[o.l])} == string[${o.r}] = ${q(s[o.r])} ✓`, {cmpv: [o.l, o.r, true]});
+      o.pairs.push([o.l, o.r]);
+      o.l++; o.cmp = null;
+      frames[frames.length - 1].vars = `left=${o.l}, right=${o.r}`;
+      snap(5, `<b>left += 1</b> → ${o.l}.`);
+      o.r--;
+      frames[frames.length - 1].vars = `left=${o.l}, right=${o.r}`;
+      snap(6, `<b>right -= 1</b> → ${o.r}.`);
+    }
+    frames.pop();
+    active = 0;
+    return o.status === 'true';
+  }
+
+  for (;;) {
+    if (!(main.L < main.R)) {
+      snap(15, `left_index ${main.L} &lt; right_index ${main.R}? <b>No</b>: every pair matched without needing a delete.`);
+      snap(22, `<b>return True</b>. "${s}" is already a palindrome.`, {final: true, result: true});
+      return out;
+    }
+    snap(15, `left_index ${main.L} &lt; right_index ${main.R} → compare the ends.`);
+    main.cmp = [main.L, main.R];
+    if (s[main.L] !== s[main.R]) {
+      main.bad = [main.L, main.R];
+      snap(16, `string[${main.L}] = ${q(s[main.L])} != string[${main.R}] = ${q(s[main.R])} → <b>first mismatch</b>. One of these two must be deleted.`, {cmpv: [main.L, main.R, false]});
+      orState = {a: 'pending', b: 'pending'};
+      snap(17, `Try <b>option 1</b>: delete the left char ${q(s[main.L])} and check <b>${main.L + 1}..${main.R}</b>.`);
+      const r1 = sub(0, main.L + 1, main.R);
+      orState.a = r1 ? 'T' : 'F';
+      if (r1) {
+        orState.b = 'skip';
+        snap(17, `Option 1 is <b>True</b>, so <code>True or …</code> is already True. <b>Option 2 is never run</b> (short-circuit).`);
+        snap(17, `<b>return True</b>: delete ${q(s[main.L])} at index ${main.L} → "${s.slice(0, main.L) + s.slice(main.L + 1)}" is a palindrome.`, {final: true, result: true});
+        return out;
+      }
+      snap(18, `Option 1 is <b>False</b>, so the <code>or</code> evaluates <b>option 2</b>: delete the right char ${q(s[main.R])} and check <b>${main.L}..${main.R - 1}</b>.`);
+      const r2 = sub(1, main.L, main.R - 1);
+      orState.b = r2 ? 'T' : 'F';
+      snap(18, r2
+        ? `<b>False or True = True</b> → <b>return True</b>: delete ${q(s[main.R])} at index ${main.R} → "${s.slice(0, main.R) + s.slice(main.R + 1)}" is a palindrome.`
+        : `<b>False or False = False</b> → <b>return False</b>. Neither single delete fixes the mismatch.`, {final: true, result: r2});
+      return out;
+    }
+    snap(16, `string[${main.L}] = ${q(s[main.L])} == string[${main.R}] = ${q(s[main.R])} ✓`, {cmpv: [main.L, main.R, true]});
+    main.pairs.push([main.L, main.R]);
+    main.cmp = null;
+    main.L++; snap(19, `<b>left_index += 1</b> → ${main.L}.`);
+    main.R--; snap(20, `<b>right_index -= 1</b> → ${main.R}.`);
+  }
+}
+
+const W = 700, H = 400, ROWS = [70, 198, 326], CH = 46;
+let xs = [], cw = 0;
+function layout() {
+  const n = S.length;
+  cw = Math.min(54, (W - 40) / n);
+  const x0 = (W - cw * n) / 2 + cw / 2;
+  xs = [...S].map((_, i) => x0 + i * cw);
+  document.getElementById('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function render() {
+  const s = steps[idx], n = S.length;
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+  const w = cw - 6;
+  let h = '';
+
+  const tag = (x, y, label, col) => {
+    const tw = label.length * 6.9 + 12;
+    return `<g class="tag"><rect x="${x - tw / 2}" y="${y - 9}" width="${tw}" height="18" rx="9" fill="${col}"/><text x="${x}" y="${y}">${label}</text></g>`;
+  };
+  const drawRow = (y, cls, tags) => {
+    for (let i = 0; i < n; i++) {
+      h += `<g class="cell ${cls(i)}"><rect x="${xs[i] - w / 2}" y="${y - CH / 2}" width="${w}" height="${CH}" rx="7"/><text x="${xs[i]}" y="${y}">${S[i]}</text></g>`;
+      h += `<text class="ix" x="${xs[i]}" y="${y + CH / 2 + 12}">${i}</text>`;
+    }
+    const byIdx = {};
+    tags.forEach(([i, label, col]) => { if (i !== null && i >= 0 && i < n) (byIdx[i] = byIdx[i] || []).push([label, col]); });
+    Object.entries(byIdx).forEach(([i, arr]) => arr.forEach(([label, col], j) => h += tag(xs[+i], y - CH / 2 - 12 - j * 20, label, col)));
+  };
+
+  // main row
+  const m = s.main, inPair = (pairs, i) => pairs.some(([a, b]) => a === i || b === i);
+  h += `<rect class="rowbg ${s.active === 0 && !s.final ? 'active' : ''}" x="2" y="${ROWS[0] - 62}" width="${W - 4}" height="110" rx="10"/>`;
+  h += `<text class="rowlabel" x="10" y="${ROWS[0] - 48}">main scan · is_palindrome</text>`;
+  drawRow(ROWS[0], i => {
+    if (m.bad && m.bad.includes(i)) return 'bad';
+    if (m.cmp && m.cmp.includes(i)) return 'cmp';
+    if (inPair(m.pairs, i)) return 'ok';
+    return '';
+  }, s.opts[0] || s.final ? [] : [[m.L, 'left_index', '#3b82f6'], [m.R, 'right_index', '#f59e0b']]);
+
+  // option rows
+  [0, 1].forEach(k => {
+    const o = s.opts[k], y = ROWS[k + 1];
+    const lbl = k === 0 ? 'option 1 · delete the LEFT char' : 'option 2 · delete the RIGHT char';
+    h += `<rect class="rowbg ${s.active === k + 1 ? 'active' : ''}" x="2" y="${y - 66}" width="${W - 4}" height="114" rx="10"/>`;
+    h += `<text class="rowlabel" x="10" y="${y - 52}" opacity="${o || (s.orState && s.orState[k ? 'b' : 'a'] === 'skip') ? 1 : .35}">${lbl}</text>`;
+    if (o) {
+      h += `<text class="rowsub" x="${10 + lbl.length * 7.2}" y="${y - 52}">is_substring_palindrome(string, ${o.lo}, ${o.hi})</text>`;
+      const st = o.status === 'true' ? ['t', '→ True ✓'] : o.status === 'false' ? ['f', '→ False ✗'] : null;
+      if (st) h += `<text class="verdict ${st[0]}" x="${W - 12}" y="${y - 52}" text-anchor="end">${st[1]}</text>`;
+      drawRow(y, i => {
+        if (i === o.del) return 'del';
+        if (i < o.lo || i > o.hi) return 'out';
+        if (o.bad && o.bad.includes(i)) return 'bad';
+        if (o.cmp && o.cmp.includes(i)) return 'cmp';
+        if (inPair(o.pairs, i)) return 'ok';
+        if (o.status === 'true' && o.l === o.r && i === o.l) return 'mid';
+        return '';
+      }, o.status === 'running' ? [[o.l, 'left', '#3b82f6'], [o.r, 'right', '#f59e0b']] : []);
+      const x = xs[o.del];
+      h += `<line class="strike" x1="${x - w / 2 + 4}" y1="${y + CH / 2 - 4}" x2="${x + w / 2 - 4}" y2="${y - CH / 2 + 4}"/>`;
+    } else if (s.orState && s.orState[k ? 'b' : 'a'] === 'skip') {
+      h += `<text class="verdict s" x="${W / 2}" y="${y + 4}" text-anchor="middle">never run: <tspan font-family="Menlo">or</tspan> short-circuited because option 1 was already True</text>`;
+    } else {
+      h += `<text class="rowsub" x="${W / 2}" y="${y + 4}" text-anchor="middle" opacity=".6">only used if the main scan hits a mismatch</text>`;
+    }
+  });
+  document.getElementById('svg').innerHTML = h;
+
+  // stack
+  document.getElementById('stack').innerHTML = s.frames.map((f, k) =>
+    `<div class="frame ${k === s.frames.length - 1 ? 'top' : ''}"><span class="fn">${f.fn}</span>(${f.vars})</div>`).join('')
+    || '<span class="empty">no active calls</span>';
+
+  document.getElementById('cmp').innerHTML = s.cmpv
+    ? `<div class="cmpbox">string[${s.cmpv[0]}] = ${q(S[s.cmpv[0]])} vs string[${s.cmpv[1]}] = ${q(S[s.cmpv[1]])} → ${s.cmpv[2] ? '<span class="t">equal</span>' : '<span class="fl">different</span>'}</div>`
+    : '';
+  const os = s.orState;
+  const show = v => v === 'T' ? '<span class="t">True</span>' : v === 'F' ? '<span class="fl">False</span>' : v === 'skip' ? '<span class="sk">(not evaluated)</span>' : '<span class="sk">?</span>';
+  document.getElementById('or').innerHTML = os
+    ? `<div class="orbox">return (<br>&nbsp;&nbsp;option 1: delete [${s.main.L}] → ${show(os.a)}<br>&nbsp;&nbsp;<b>or</b><br>&nbsp;&nbsp;option 2: delete [${s.main.R}] → ${show(os.b)}<br>)</div>`
+    : '<span class="empty">The "or" of the two options appears here at the first mismatch.</span>';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer ${s.result ? 'yes' : 'no'}">return ${s.result ? 'True' : 'False'}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  let v = document.getElementById('input').value.trim().replace(/^["']|["']$/g, '');
+  if (!v.length || v.length > 24 || !/^[a-z]+$/.test(v)) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input.</b> Use 1–24 lowercase letters, e.g. <code>abca</code>.`;
+    return;
+  }
+  steps = simulate(v);
+  layout();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
