@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>424. Longest Repeating Character Replacement — Sliding Window Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --purple:#7c3aed; --purple-soft:#ede9fe;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #svg{width:100%;height:300px;display:block}
+
+  .cell rect{fill:#fff;stroke:#94a3b8;stroke-width:2.5;transition:all .25s}
+  .cell text{font:700 20px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink)}
+  .cell.outside rect{fill:#faf8f4;stroke:#e7e2d8}
+  .cell.outside text{fill:#c0b9ae}
+  .cell.keep rect{fill:var(--blue-soft);stroke:var(--blue)}
+  .cell.repl rect{fill:var(--amber-soft);stroke:var(--amber)}
+  .cell.repl text{fill:#b45309}
+  .cell.over rect{fill:var(--red-soft);stroke:var(--red)}
+  .cell.over text{fill:#9f1239}
+  .cell.leaving rect{fill:var(--gray-soft);stroke:var(--gray);stroke-dasharray:4 3}
+  .cell.leaving text{fill:#94a3b8}
+  .cell.new rect{stroke-width:4.5}
+  .ix{font:11px Menlo,monospace;fill:#a8a29e;text-anchor:middle}
+  .ghost{font:700 13px Menlo,monospace;text-anchor:middle;fill:var(--blue)}
+  .win{fill:none;stroke:var(--purple);stroke-width:3;rx:12}
+  .win.bad{stroke:var(--red);stroke-dasharray:6 4}
+  .bestbar{stroke:var(--green);stroke-width:6;stroke-linecap:round}
+  .bestlabel{font:700 12px sans-serif;fill:var(--green)}
+  .tag text{font:700 11.5px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:#fff}
+  .gtitle{font:600 12px sans-serif;fill:var(--muted)}
+  .slot{stroke-width:2}
+  .slot.used{fill:var(--amber-soft);stroke:var(--amber)}
+  .slot.free{fill:#fff;stroke:#d6d3d1;stroke-dasharray:3 3}
+  .slot.overflow{fill:var(--red-soft);stroke:var(--red)}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:14px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-keep::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-repl::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-over::before{background:var(--red-soft);border-color:var(--red)!important}
+  .lg-out::before{background:#faf8f4;border-color:#e7e2d8!important}
+  .lg-best::before{background:var(--green);border-color:var(--green)!important;height:5px!important;vertical-align:3px!important}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.nu{color:#c2410c}.cm{color:#a8a29e;font-style:italic}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px;line-height:1.45}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .idea p{margin:0 0 6px}
+  .idea p:last-child{margin:0}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.15fr;gap:18px}
+  .vars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .var{border-radius:10px;padding:6px 10px;border:2px solid var(--line);background:#faf8f4}
+  .var .k{font:12px Menlo,monospace;color:var(--muted)}
+  .var .v{font:700 22px Menlo,monospace}
+  .var.chg{border-color:var(--amber);background:var(--amber-soft)}
+  .var.best .v{color:var(--green)}
+  .counts{display:flex;gap:10px;align-items:flex-end;margin-top:12px;min-height:110px;padding:6px 4px 0;border-bottom:2px solid var(--line)}
+  .bar{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:34px}
+  .bar .b{width:30px;border-radius:5px 5px 0 0;background:#cbd5e1;transition:height .3s}
+  .bar.top .b{background:var(--blue)}
+  .bar.chg .b{box-shadow:0 0 0 3px var(--amber)}
+  .bar .n{font:700 13px Menlo,monospace}
+  .bar .c{font:700 14px Menlo,monospace;color:var(--muted);margin-bottom:-24px;transform:translateY(22px)}
+  .countslbl{font:12px Menlo,monospace;color:var(--muted);margin-top:28px}
+  .check{margin-top:10px;font:13.5px Menlo,monospace;padding:8px 10px;border-radius:8px;background:#faf8f4;line-height:1.6}
+  .check .t{color:var(--red);font-weight:700} .check .fl{color:var(--green);font-weight:700}
+  table.hist{border-collapse:collapse;font:12.5px Menlo,monospace;width:100%}
+  table.hist th{font:600 11px sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+  table.hist td{padding:3px 6px;border-bottom:1px solid #f1ede5}
+  table.hist tr.cur td{background:var(--amber-soft)}
+  table.hist .rec{color:var(--green);font-weight:700}
+  table.hist .sh{color:var(--red)}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:220px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>424. Longest Repeating Character Replacement — Sliding Window</h1>
+  <p>A window is fine if <b>window length − count of its most common letter ≤ k</b>: keep the most common letter and repaint everything else. Grow the window to the right. When it needs more than k repaints, slide the left edge.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>String &amp; window <span style="text-transform:none;letter-spacing:0">(blue = letter we keep, amber = letters we'd repaint)</span></h2>
+    <svg id="svg"></svg>
+    <div class="legend">
+      <span class="lg-keep">kept (most common letter)</span>
+      <span class="lg-repl">repainted (uses 1 of k)</span>
+      <span class="lg-over">too many repaints: over k</span>
+      <span class="lg-out">outside the window</span>
+      <span class="lg-best">best window so far</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <p><b>Repaints needed</b> for a window = its length − the count of its most common letter. If that's ≤ k, the whole window can become one letter.</p>
+      <p><b>Grow right, slide left.</b> Each <code>right</code> adds one char. If the window now needs more than k repaints, drop <code>s[left]</code>. The window is never smaller than the best so far, so it only ever <b>slides or grows</b>.</p>
+      <p><b>Why <code>max_freq</code> never goes down:</b> the answer only improves when some letter reaches a <i>new</i> higher count. A stale (too-high) <code>max_freq</code> can only keep the window at its current size and slide it along. It can never let the window grow wrongly, so recomputing it isn't needed.</p>
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n)</span>
+        <span class="cxw">n = len(s). <code>right</code> moves n times and <code>left</code> moves at most n times in total, so each char enters and leaves the window once. Each move is O(1) dictionary work.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(1)</span>
+        <span class="cxw"><code>count</code> holds at most 26 keys (uppercase letters), whatever n is. More generally it's O(σ) for an alphabet of σ letters.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h2>Variables &amp; <code>count</code></h2>
+      <div class="vars" id="vars"></div>
+      <div class="counts" id="counts"></div>
+      <div id="check"></div>
+    </div>
+    <div class="panel">
+      <h2>Each value of <code>right</code></h2>
+      <div id="hist"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1800">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="550">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">s, k:</label>
+    <input type="text" id="input" value='"AABABBBA", 1'>
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t='"ABAB", 2'>#1 "ABAB", 2 (→ 4)</button>
+    <button class="preset" data-t='"AABABBA", 1'>#2 "AABABBA", 1 (→ 4)</button>
+    <button class="preset" data-t='"ABCDE", 1'>"ABCDE", 1 (→ 2)</button>
+    <button class="preset" data-t='"AAAA", 0'>"AAAA", 0 (→ 4)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">from</span> typing <span class="kw">import</span> <span class="ty">Optional</span>`,
+  ``,
+  ``,
+  `<span class="kw">class</span> <span class="ty">Solution</span>:`,
+  `    <span class="kw">def</span> <span class="fn">characterReplacement</span>(self, s: <span class="ty">str</span>, k: <span class="ty">int</span>) -> <span class="ty">int</span>:`,
+  `        count = {}`,
+  `        max_freq = <span class="nu">0</span>`,
+  `        left = <span class="nu">0</span>`,
+  `        best = <span class="nu">0</span>`,
+  `        <span class="kw">for</span> right <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s)):`,
+  `            count[s[right]] = count.<span class="fn">get</span>(s[right], <span class="nu">0</span>) + <span class="nu">1</span>`,
+  `            max_freq = <span class="fn">max</span>(max_freq, count[s[right]])`,
+  `            <span class="kw">while</span> (right - left + <span class="nu">1</span>) - max_freq &gt; k:`,
+  `                count[s[left]] -= <span class="nu">1</span>`,
+  `                left += <span class="nu">1</span>`,
+  `            best = <span class="fn">max</span>(best, right - left + <span class="nu">1</span>)`,
+  `        <span class="kw">return</span> best`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let S = '', K = 0, steps = [], idx = 0, timer = null;
+
+function simulate(s, k) {
+  S = s; K = k;
+  const out = [], count = {}, hist = [];
+  let max_freq = 0, left = 0, best = 0, right = null, bestRange = null, row = null;
+  const snap = (line, msg, ex = {}) => out.push({
+    line, msg, left, right, max_freq, best, bestRange: bestRange && [...bestRange],
+    count: {...count}, hist: hist.map(h => ({...h})), ...ex
+  });
+
+  snap(6, `<b>count = {}</b> will hold how many times each letter appears <b>inside the window</b>.`, {chg: ['count']});
+  snap(7, `<b>max_freq = 0</b>: the highest count any single letter has reached.`, {chg: ['max_freq']});
+  snap(8, `<b>left = 0</b>: the left edge of the window.`, {chg: ['left']});
+  snap(9, `<b>best = 0</b>: the longest valid window seen so far.`, {chg: ['best']});
+
+  for (right = 0; right < s.length; right++) {
+    const c = s[right];
+    row = {right, c, shrunk: 0};
+    hist.push(row);
+    snap(10, `<b>right = ${right}</b>: the window grows to include <b>'${c}'</b>.`, {chg: ['right'], newCell: right});
+    count[c] = (count[c] || 0) + 1;
+    snap(11, `count['${c}'] += 1 → <b>${count[c]}</b>.`, {chg: ['count'], cchg: c, newCell: right});
+    const prev = max_freq;
+    max_freq = Math.max(max_freq, count[c]);
+    const len = right - left + 1;
+    snap(12, max_freq > prev
+      ? `max_freq = max(${prev}, ${count[c]}) → <b>${max_freq}</b>. '${c}' is now the most common letter we've seen.`
+      : `max_freq = max(${prev}, ${count[c]}) → stays <b>${max_freq}</b>.`, {chg: max_freq > prev ? ['max_freq'] : [], newCell: right});
+    for (;;) {
+      const L = right - left + 1, need = L - max_freq;
+      if (!(need > k)) {
+        snap(13, `Window length ${L} − max_freq ${max_freq} = <b>${need}</b> repaint${need === 1 ? '' : 's'} ≤ k = ${k} ✓ → the window is valid.`, {check: {L, need, ok: true}});
+        break;
+      }
+      snap(13, `Window length ${L} − max_freq ${max_freq} = <b>${need}</b> repaints &gt; k = ${k} ✗ → too many. Drop the leftmost char.`, {check: {L, need, ok: false}, leaving: left});
+      const lc = s[left];
+      count[lc] -= 1;
+      snap(14, `count['${lc}'] -= 1 → <b>${count[lc]}</b>. '${lc}' at index ${left} leaves the window.`, {chg: ['count'], cchg: lc, leaving: left});
+      left += 1; row.shrunk++;
+      snap(15, `<b>left = ${left}</b>. The window slides right and keeps its length.`, {chg: ['left']});
+    }
+    const L = right - left + 1, rec = L > best, prevBest = best;
+    best = Math.max(best, L);
+    if (rec) bestRange = [left, right];
+    row.win = s.slice(left, right + 1); row.len = L; row.mf = max_freq; row.rec = rec; row.best = best;
+    snap(16, rec
+      ? `best = max(${prevBest}, ${L}) → <b>${best}</b>. New record: "${row.win}".`
+      : `best = max(${best}, ${L}) → stays <b>${best}</b>.`, {chg: rec ? ['best'] : [], rec});
+  }
+  right = null;
+  snap(17, `<b>return ${best}</b>: the longest window is "${s.slice(bestRange[0], bestRange[1] + 1)}" (indices ${bestRange[0]}..${bestRange[1]}). Repaint its ${best - Math.max(...Object.values(countIn(s, bestRange)))} odd letter(s) to make it one letter.`, {final: true});
+  return out;
+}
+function countIn(s, [a, b]) { const c = {}; for (let i = a; i <= b; i++) c[s[i]] = (c[s[i]] || 0) + 1; return c; }
+
+const W = 680, H = 300, Y = 100, CH = 50;
+let xs = [], cw = 0;
+function layout() {
+  const n = S.length;
+  cw = Math.min(58, (W - 40) / n);
+  const x0 = (W - cw * n) / 2 + cw / 2;
+  xs = [...S].map((_, i) => x0 + i * cw);
+  document.getElementById('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function render() {
+  const s = steps[idx], n = S.length, w = cw - 6;
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  const inWin = i => s.right !== null && i >= s.left && i <= s.right;
+  // the letter actually kept = most frequent letter in the current window (ties → max_freq letter)
+  let keep = null, actualMax = 0;
+  if (s.right !== null) {
+    const c = countIn(S, [s.left, s.right]);
+    Object.entries(c).forEach(([ch, v]) => { if (v > actualMax || (v === actualMax && ch === S[s.right])) { keep = ch; actualMax = v; } });
+  }
+  const L = s.right === null ? 0 : s.right - s.left + 1;
+  const over = s.check && !s.check.ok;
+
+  let h = '';
+  // best bar
+  if (s.bestRange) {
+    const [a, b] = s.bestRange, y = Y + CH / 2 + 30;
+    h += `<line class="bestbar" x1="${xs[a] - w / 2 + 4}" y1="${y}" x2="${xs[b] + w / 2 - 4}" y2="${y}"/>`;
+    h += `<text class="bestlabel" x="${(xs[a] + xs[b]) / 2}" y="${y + 18}" text-anchor="middle">best = ${s.best}</text>`;
+  }
+  for (let i = 0; i < n; i++) {
+    let cls = 'outside';
+    if (inWin(i)) cls = S[i] === keep ? 'keep' : (over ? 'over' : 'repl');
+    if (s.leaving === i) cls = 'leaving';
+    if (s.newCell === i) cls += ' new';
+    h += `<g class="cell ${cls}"><rect x="${xs[i] - w / 2}" y="${Y - CH / 2}" width="${w}" height="${CH}" rx="8"/><text x="${xs[i]}" y="${Y}">${S[i]}</text></g>`;
+    if (inWin(i) && S[i] !== keep && keep && s.leaving !== i) h += `<text class="ghost" x="${xs[i]}" y="${Y + CH / 2 - 7}">→${keep}</text>`;
+    h += `<text class="ix" x="${xs[i]}" y="${Y + CH / 2 + 14}">${i}</text>`;
+  }
+  if (s.right !== null) {
+    const x1 = xs[s.left] - w / 2 - 5, x2 = xs[s.right] + w / 2 + 5;
+    h += `<rect class="win ${over ? 'bad' : ''}" x="${x1}" y="${Y - CH / 2 - 6}" width="${x2 - x1}" height="${CH + 12}" rx="12"/>`;
+    const tag = (x, y, label, col) => { const tw = label.length * 7 + 14; return `<g class="tag"><rect x="${x - tw / 2}" y="${y - 10}" width="${tw}" height="20" rx="10" fill="${col}"/><text x="${x}" y="${y}">${label}</text></g>`; };
+    if (s.left === s.right) h += tag(xs[s.left], Y - CH / 2 - 22, 'left = right', '#7c3aed');
+    else { h += tag(xs[s.left], Y - CH / 2 - 22, 'left', '#7c3aed'); h += tag(xs[s.right], Y - CH / 2 - 22, 'right', '#f59e0b'); }
+  }
+
+  // repaint gauge: k slots
+  if (s.right !== null) {
+    const need = L - s.max_freq, gy = 228, sw = 30, total = Math.max(K, need);
+    h += `<text class="gtitle" x="20" y="${gy - 14}">repaints needed = len ${L} − max_freq ${s.max_freq} = ${need}   (budget k = ${K})</text>`;
+    for (let j = 0; j < Math.max(total, 1); j++) {
+      const cls = j < Math.min(need, K) ? 'used' : j < K ? 'free' : 'overflow';
+      if (K === 0 && need <= 0) { h += `<text class="gtitle" x="20" y="${gy + 18}">k = 0: no repaints allowed</text>`; break; }
+      h += `<rect class="slot ${cls}" x="${20 + j * (sw + 6)}" y="${gy}" width="${sw}" height="24" rx="5"/>`;
+    }
+    if (actualMax < s.max_freq) h += `<text class="gtitle" x="${W - 20}" y="${gy + 50}" text-anchor="end" fill="#7c3aed">max_freq ${s.max_freq} is stale (real top count in window is ${actualMax}). That's fine, see the note.</text>`;
+  }
+  document.getElementById('svg').innerHTML = h;
+
+  // vars
+  const chg = new Set(s.chg || []);
+  const vv = (k, v, extra = '') => `<div class="var ${chg.has(k) ? 'chg' : ''} ${extra}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  document.getElementById('vars').innerHTML = vv('left', s.left) + vv('right', s.right === null ? '—' : s.right) + vv('max_freq', s.max_freq) + vv('best', s.best, 'best');
+  const letters = Object.keys(s.count).sort();
+  const mx = Math.max(1, ...Object.values(s.count), s.max_freq);
+  document.getElementById('counts').innerHTML = letters.length
+    ? letters.map(ch => `<div class="bar ${s.count[ch] === s.max_freq && s.count[ch] > 0 ? 'top' : ''} ${s.cchg === ch ? 'chg' : ''}"><span class="n">${s.count[ch]}</span><div class="b" style="height:${8 + 70 * s.count[ch] / mx}px"></div><span class="c">${ch}</span></div>`).join('')
+    : '<span class="empty">count = {} (empty)</span>';
+  document.getElementById('check').innerHTML = `<div class="countslbl">count = {${letters.map(ch => `'${ch}': ${s.count[ch]}`).join(', ')}}</div>` +
+    (s.check ? `<div class="check">(right − left + 1) − max_freq &gt; k<br>${s.check.L} − ${s.max_freq} = ${s.check.need} &gt; ${K} → ${s.check.ok ? '<span class="fl">False → valid, stop shrinking</span>' : '<span class="t">True → shrink</span>'}</div>` : '');
+
+  // history
+  document.getElementById('hist').innerHTML = s.hist.length
+    ? `<table class="hist"><tr><th>right</th><th>char</th><th>window</th><th>len</th><th>max_freq</th><th>left moved</th><th>best</th></tr>` +
+      s.hist.map((r, j) => `<tr class="${j === s.hist.length - 1 && !s.final ? 'cur' : ''}"><td>${r.right}</td><td>${r.c}</td><td>${r.win === undefined ? '…' : '"' + r.win + '"'}</td><td>${r.len ?? ''}</td><td>${r.mf ?? ''}</td><td class="${r.shrunk ? 'sh' : ''}">${r.win === undefined ? '' : r.shrunk ? '+' + r.shrunk : '—'}</td><td class="${r.rec ? 'rec' : ''}">${r.best ?? ''}${r.rec ? ' ★' : ''}</td></tr>`).join('') + `</table>`
+    : '<span class="empty">rows appear as right moves</span>';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${s.best}</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  const m = document.getElementById('input').value.match(/^\s*["']?([A-Za-z]+)["']?\s*,\s*(\d+)\s*$/);
+  if (!m || m[1].length > 14) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input.</b> Use <code>"AABABBA", 1</code> (1–14 uppercase letters, then k).`;
+    return;
+  }
+  steps = simulate(m[1].toUpperCase(), +m[2]);
+  layout();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
