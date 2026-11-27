@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>876. Middle of the Linked List — Fast &amp; Slow Pointers Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #svg{width:100%;height:330px;display:block}
+
+  .edge{stroke:#94a3b8;stroke-width:2.5}
+  .edge.hop-slow{stroke:var(--blue);stroke-width:5}
+  .edge.hop-fast{stroke:var(--amber);stroke-width:5}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font:700 17px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.passed circle{fill:var(--gray-soft);stroke:var(--gray)}
+  .node.passed text{fill:#94a3b8}
+  .node.slow circle{fill:var(--blue-soft);stroke:var(--blue);stroke-width:4}
+  .node.fast circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:4}
+  .node.both circle{fill:var(--blue-soft);stroke:var(--amber);stroke-width:5}
+  .node.mid circle{fill:#fff;stroke:var(--amber);stroke-width:3;stroke-dasharray:5 3}
+  .node.ans circle{fill:var(--green-soft);stroke:var(--green);stroke-width:5}
+  .node.ans text{fill:#166534}
+  .none rect{fill:#faf8f4;stroke:#d6d3d1;stroke-width:2;stroke-dasharray:4 3}
+  .none text{font:600 13px Menlo,monospace;fill:#a8a29e;text-anchor:middle;dominant-baseline:central}
+  .none.fast rect{fill:var(--amber-soft);stroke:var(--amber);stroke-dasharray:none;stroke-width:3}
+  .none.fast text{fill:#b45309}
+  .ix{font:11px Menlo,monospace;fill:#a8a29e;text-anchor:middle}
+  .tag rect{stroke-width:2}
+  .tag text{font:700 12px sans-serif;text-anchor:middle;dominant-baseline:central}
+  .tag.s rect{fill:var(--blue);stroke:var(--blue)} .tag.s text{fill:#fff}
+  .tag.f rect{fill:var(--amber);stroke:var(--amber)} .tag.f text{fill:#fff}
+  .bar{stroke-linecap:round;stroke-width:8}
+  .bar.s{stroke:var(--blue)} .bar.f{stroke:var(--amber)}
+  .barlabel{font:700 12px Menlo,monospace}
+  .barlabel.s{fill:#1d4ed8} .barlabel.f{fill:#b45309}
+  .halfline{stroke:var(--green);stroke-width:2;stroke-dasharray:5 4}
+  .halflabel{font:600 11px sans-serif;fill:var(--green);text-anchor:middle}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-new::before{background:#fff;border-color:#94a3b8!important}
+  .lg-slow::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-fast::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-passed::before{background:var(--gray-soft);border-color:var(--gray)!important}
+  .lg-ans::before{background:var(--green-soft);border-color:var(--green)!important}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.cm{color:#a8a29e;font-style:italic}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px;line-height:1.45}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .idea p{margin:0 0 6px}
+  .idea p:last-child{margin:0}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .vars{display:flex;gap:12px;flex-wrap:wrap}
+  .var{flex:1;min-width:150px;border-radius:10px;padding:8px 12px;border:2px solid}
+  .var .k{font:12px Menlo,monospace;color:var(--muted)}
+  .var .v{font:700 24px Menlo,monospace}
+  .var .d{font:12px Menlo,monospace;color:#57534e}
+  .var.s{background:var(--blue-soft);border-color:var(--blue)} .var.s .v{color:#1d4ed8}
+  .var.f{background:var(--amber-soft);border-color:var(--amber)} .var.f .v{color:#b45309}
+  .cond{margin-top:10px;font:13.5px Menlo,monospace;padding:8px 10px;border-radius:8px;background:#faf8f4;line-height:1.6}
+  .cond .t{color:var(--green);font-weight:700} .cond .fl{color:var(--red);font-weight:700} .cond .sk{color:#a8a29e}
+  table.hist{border-collapse:collapse;font:13px Menlo,monospace;width:100%}
+  table.hist th{font:600 11px sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  table.hist td{padding:4px 8px;border-bottom:1px solid #f1ede5}
+  table.hist tr.new td{background:var(--amber-soft)}
+  table.hist .sv{color:#1d4ed8;font-weight:700} table.hist .fv{color:#b45309;font-weight:700}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:240px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>876. Middle of the Linked List — Fast &amp; Slow Pointers</h1>
+  <p>🐢 slow moves 1 node per round and 🐇 fast moves 2, so fast has always walked <b>twice as far</b>. When fast reaches the end, slow is exactly <b>halfway</b>, at the middle.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Linked list <span style="text-transform:none;letter-spacing:0">(bars underneath = distance walked from head)</span></h2>
+    <svg id="svg"></svg>
+    <div class="legend">
+      <span class="lg-new">node</span>
+      <span class="lg-slow">🐢 slow</span>
+      <span class="lg-fast">🐇 fast</span>
+      <span class="lg-passed">slow already passed it</span>
+      <span class="lg-ans">returned middle</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <p><b>Why it works:</b> after k rounds slow is at index k and fast is at index 2k. The loop stops when fast can't take two more steps, i.e. 2k ≈ n − 1 (or n). So k ≈ n / 2, which is the middle.</p>
+      <p><b>Odd length</b> (n = 5): fast stops <b>on the last node</b> (<code>fast.next</code> is None). Slow is at index 2, the exact middle.<br>
+      <b>Even length</b> (n = 6): fast steps <b>off the end</b> onto None. Slow is at index 3, the <b>second</b> of the two middles, which is what LeetCode wants.</p>
+      <p><b>Why check <code>fast.next</code>?</b> <code>fast.next.next</code> would crash with None.next if <code>fast.next</code> were None. The <code>fast</code> check protects <code>fast.next</code> in the same way.</p>
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n)</span>
+        <span class="cxw">n = number of nodes. Fast visits about n nodes two at a time, so the loop runs ⌊n/2⌋ rounds of O(1) work. It's one pass, without counting the length first.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(1)</span>
+        <span class="cxw">Just two pointer variables. No array copy of the list and no recursion.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h2>Pointers</h2>
+      <div class="vars" id="vars"></div>
+      <div id="cond"></div>
+    </div>
+    <div class="panel">
+      <h2>Rounds</h2>
+      <div id="hist"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1800">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="550">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">head:</label>
+    <input type="text" id="input" value="[1,2,3,4,5,6]">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="[1,2,3,4,5]">#1 (→ 3)</button>
+    <button class="preset" data-t="[1,2,3,4,5,6]">#2 (→ 4)</button>
+    <button class="preset" data-t="[3,2,1]">[3,2,1] (→ 2)</button>
+    <button class="preset" data-t="[10]">[10] (→ 10)</button>
+    <button class="preset" data-t="[1,2]">[1,2] (→ 2)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">get_middle_node</span>(head):`,
+  ``,
+  `    <span class="cm"># Create two pointers, slow and fast ,initially pointing to the head</span>`,
+  `    slow = head`,
+  `    fast = head`,
+  ``,
+  `    <span class="cm"># Traverse the linked list until fast reaches at the last node or NULL</span>`,
+  `    <span class="kw">while</span> fast <span class="kw">and</span> fast.next:`,
+  ``,
+  `        <span class="cm"># Move slow pointer one step ahead</span>`,
+  `        slow = slow.next`,
+  ``,
+  `        <span class="cm"># Move fast pointer two steps ahead</span>`,
+  `        fast = fast.next.next`,
+  ``,
+  `    <span class="cm"># Return the slow pointer</span>`,
+  `    <span class="kw">return</span> slow`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let vals = [], steps = [], idx = 0, timer = null;
+
+// Pointers are node indices; index n means None (fell off the end).
+function simulate(a) {
+  vals = a;
+  const n = a.length, out = [], hist = [];
+  let slow = null, fast = null, round = 0;
+  const name = i => i === null ? '—' : i >= n ? 'None' : `node ${a[i]}`;
+  const snap = (line, msg, extra = {}) => out.push({line, msg, slow, fast, round, hist: hist.map(h => ({...h})), ...extra});
+
+  slow = 0;
+  snap(4, `<b>slow = head</b> → node <b>${a[0]}</b>.`);
+  fast = 0;
+  snap(5, `<b>fast = head</b> → node <b>${a[0]}</b>. Both start at index 0, distance 0.`);
+
+  for (;;) {
+    const fOk = fast < n, nOk = fOk && fast + 1 < n;
+    const cond = {fast: name(fast), fOk, next: fOk ? (fast + 1 < n ? `node ${a[fast + 1]}` : 'None') : null, nOk};
+    if (!(fOk && nOk)) {
+      snap(8, !fOk
+        ? `<b>fast is None</b> → stop. Fast stepped <b>off the end</b>, so the list has even length n = ${n}. Slow walked ${slow}, fast walked ${fast} = 2 × ${slow}.`
+        : `<b>fast.next is None</b> → stop. Fast is <b>on the last node</b>, so the list has odd length n = ${n}. Fast can't take 2 more steps without crashing.`,
+        {cond, stop: true});
+      break;
+    }
+    snap(8, `fast is node ${a[fast]} ✓ and fast.next is node ${a[fast + 1]} ✓ → fast can take 2 more steps, so run round <b>${round + 1}</b>.`, {cond});
+    round++;
+    const s0 = slow; slow = s0 + 1;
+    snap(11, `🐢 <b>slow = slow.next</b>: node ${a[s0]} → <b>node ${a[slow]}</b>. Slow has walked <b>${slow}</b>.`, {hops: [[s0, slow, 'slow']]});
+    const f0 = fast; fast = f0 + 2;
+    snap(14, `🐇 <b>fast = fast.next.next</b>: node ${a[f0]} → node ${a[f0 + 1]} → <b>${fast < n ? 'node ' + a[fast] : 'None'}</b>. Fast has walked <b>${fast}</b> = 2 × ${slow}.`,
+      {hops: [[f0, f0 + 1, 'fast'], [f0 + 1, fast, 'fast']]});
+    hist.push({round, s: a[slow], f: fast < n ? a[fast] : 'None', ds: slow, df: fast});
+  }
+  snap(17, `<b>return slow</b> → node <b>${a[slow]}</b> (index ${slow} of ${n}). ` +
+    (n % 2 ? `Odd length: the exact middle.` : `Even length: the <b>second</b> of the two middles (${a[slow - 1]} and ${a[slow]}).`),
+    {final: true});
+  return out;
+}
+
+const W = 680, H = 330, Y = 130, R = 22;
+let xs = [];
+function layout() {
+  const n = vals.length, step = Math.min(78, (W - 70) / n);
+  const total = step * n, x0 = (W - total) / 2 + 14;
+  xs = [];
+  for (let i = 0; i <= n; i++) xs.push(x0 + i * step);
+  document.getElementById('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function render() {
+  const s = steps[idx], n = vals.length;
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  let h = `<defs>`;
+  [['ar', '#94a3b8', 6], ['ars', '#3b82f6', 4], ['arF', '#f59e0b', 4]].forEach(([id, col, sz]) =>
+    h += `<marker id="${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="${sz}" markerHeight="${sz}" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${col}"/></marker>`);
+  h += `</defs>`;
+
+  const hops = s.hops || [];
+  for (let i = 0; i < n; i++) {
+    const hop = hops.find(([a, b]) => a === i && b === i + 1);
+    const cls = hop ? `hop-${hop[2]}` : '';
+    const mk = hop ? (hop[2] === 'slow' ? 'ars' : 'arF') : 'ar';
+    const x2 = i + 1 < n ? xs[i + 1] - R - 3 : xs[n] - 26;
+    h += `<line class="edge ${cls}" x1="${xs[i] + R + 2}" y1="${Y}" x2="${x2}" y2="${Y}" marker-end="url(#${mk})"/>`;
+  }
+  // None box
+  h += `<g class="none ${s.fast === n ? 'fast' : ''}"><rect x="${xs[n] - 24}" y="${Y - 16}" width="48" height="32" rx="8"/><text x="${xs[n]}" y="${Y}">None</text></g>`;
+  const midHop = hops.length === 2 ? hops[0][1] : null;
+  for (let i = 0; i < n; i++) {
+    let cls = '';
+    if (s.slow !== null && i < s.slow) cls = 'passed';
+    if (i === midHop) cls = 'mid';
+    if (i === s.fast) cls = 'fast';
+    if (i === s.slow) cls = s.fast === i ? 'both' : 'slow';
+    if (s.final && i === s.slow) cls = 'ans';
+    h += `<g class="node ${cls}"><circle cx="${xs[i]}" cy="${Y}" r="${R}"/><text x="${xs[i]}" y="${Y}">${vals[i]}</text></g>`;
+    h += `<text class="ix" x="${xs[i]}" y="${Y + R + 15}">[${i}]</text>`;
+  }
+
+  const tag = (i, label, kind, above) => {
+    const tw = label.length * 7 + 20, y = above ? Y - R - 30 : Y + R + 44;
+    return `<line x1="${xs[i]}" y1="${above ? y + 12 : y - 12}" x2="${xs[i]}" y2="${above ? Y - R - 2 : Y + R + 22}" stroke="${kind === 's' ? '#3b82f6' : '#f59e0b'}" stroke-width="2"/>` +
+      `<g class="tag ${kind}"><rect x="${xs[i] - tw / 2}" y="${y - 12}" width="${tw}" height="24" rx="12"/><text x="${xs[i]}" y="${y}">${label}</text></g>`;
+  };
+  if (s.slow !== null) h += tag(s.slow, s.final ? '🐢 middle' : '🐢 slow', 's', true);
+  if (s.fast !== null && !s.final) h += tag(s.fast, '🐇 fast', 'f', false);
+
+  // distance bars
+  const by = Y + R + 88;
+  if (s.slow !== null) {
+    h += `<text class="barlabel s" x="${xs[0] - 34}" y="${by + 4}" text-anchor="end">🐢</text>`;
+    h += s.slow > 0 ? `<line class="bar s" x1="${xs[0]}" y1="${by}" x2="${xs[s.slow]}" y2="${by}"/>` : `<circle cx="${xs[0]}" cy="${by}" r="4" fill="#3b82f6"/>`;
+    h += `<text class="barlabel s" x="${xs[s.slow] + 10}" y="${by + 4}">${s.slow}</text>`;
+  }
+  if (s.fast !== null) {
+    const fy = by + 26;
+    h += `<text class="barlabel f" x="${xs[0] - 34}" y="${fy + 4}" text-anchor="end">🐇</text>`;
+    h += s.fast > 0 ? `<line class="bar f" x1="${xs[0]}" y1="${fy}" x2="${xs[s.fast]}" y2="${fy}"/>` : `<circle cx="${xs[0]}" cy="${fy}" r="4" fill="#f59e0b"/>`;
+    h += `<text class="barlabel f" x="${xs[s.fast] + 10}" y="${fy + 4}">${s.fast}${s.slow ? ` = 2×${s.slow}` : ''}</text>`;
+  }
+  if (s.final) {
+    h += `<line class="halfline" x1="${xs[s.slow]}" y1="${Y - R - 50}" x2="${xs[s.slow]}" y2="${by + 40}"/>`;
+    h += `<text class="halflabel" x="${xs[s.slow]}" y="${by + 54}">half of fast's distance</text>`;
+  }
+  document.getElementById('svg').innerHTML = h;
+
+  const nm = i => i === null ? '—' : i >= n ? 'None' : vals[i];
+  document.getElementById('vars').innerHTML =
+    `<div class="var s"><div class="k">🐢 slow (+1 per round)</div><div class="v">${nm(s.slow)}</div><div class="d">${s.slow === null ? '' : `index ${s.slow} · walked ${s.slow}`}</div></div>` +
+    `<div class="var f"><div class="k">🐇 fast (+2 per round)</div><div class="v">${nm(s.fast)}</div><div class="d">${s.fast === null ? '' : `index ${s.fast} · walked ${s.fast}`}</div></div>`;
+  const c = s.cond;
+  document.getElementById('cond').innerHTML = c
+    ? `<div class="cond">fast → ${c.fast} → <span class="${c.fOk ? 't' : 'fl'}">${c.fOk ? 'truthy' : 'None (falsy)'}</span><br>` +
+      (c.fOk ? `fast.next → ${c.next} → <span class="${c.nOk ? 't' : 'fl'}">${c.nOk ? 'truthy' : 'None (falsy)'}</span>`
+             : `<span class="sk">fast.next → not evaluated (short-circuit, it would crash)</span>`) +
+      `<br><b>${c.fOk && c.nOk ? '→ enter the loop body' : '→ exit the loop'}</b></div>`
+    : '';
+
+  document.getElementById('hist').innerHTML = s.hist.length || s.slow !== null
+    ? `<table class="hist"><tr><th>round</th><th>🐢 slow</th><th>walked</th><th>🐇 fast</th><th>walked</th></tr>` +
+      (s.slow !== null ? `<tr><td>start</td><td class="sv">${vals[0]}</td><td>0</td><td class="fv">${s.fast === null ? '—' : vals[0]}</td><td>0</td></tr>` : '') +
+      s.hist.map((r, k) => `<tr class="${k === s.hist.length - 1 && s.line === 14 ? 'new' : ''}"><td>${r.round}</td><td class="sv">${r.s}</td><td>${r.ds}</td><td class="fv">${r.f}</td><td>${r.df}</td></tr>`).join('') + `</table>`
+    : '<span class="empty">no rounds yet</span>';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return node ${vals[s.slow]} → list from here: [${vals.slice(s.slow).join(',')}]</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function parse(str) {
+  const a = JSON.parse(str.trim().startsWith('[') ? str : '[' + str + ']');
+  if (!Array.isArray(a) || !a.length) throw new Error('the list needs at least 1 node');
+  if (a.length > 12) throw new Error('keep it to 12 nodes or fewer so it fits');
+  if (a.some(v => !Number.isInteger(v))) throw new Error('values must be integers');
+  return a;
+}
+function load() {
+  stop();
+  let a;
+  try { a = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>[1,2,3,4,5]</code>.`;
+    return;
+  }
+  steps = simulate(a);
+  layout();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
