@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>287. Find the Duplicate Number — Fast &amp; Slow Pointers Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --purple:#7c3aed; --purple-soft:#ede9fe;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #svg{width:100%;height:440px;display:block}
+
+  .edge{stroke:#cbd5e1;stroke-width:2.5;fill:none}
+  .edge.faint{stroke:#e7e2d8;stroke-dasharray:5 5}
+  .edge.hop-slow{stroke:var(--blue);stroke-width:5}
+  .edge.hop-fast{stroke:var(--amber);stroke-width:5}
+  .edge.into{stroke:var(--green);stroke-width:5}
+  .node rect{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font:700 16px Menlo,monospace;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node .sub{font:500 10px Menlo,monospace;fill:#a8a29e}
+  .node.unseen rect{fill:#faf8f4;stroke:#d6d3d1;stroke-dasharray:4 3}
+  .node.unseen text{fill:#c0b9ae}
+  .node.off rect{fill:var(--gray-soft);stroke:var(--gray)}
+  .node.off text{fill:#94a3b8}
+  .node.slow rect{fill:var(--blue-soft);stroke:var(--blue);stroke-width:4}
+  .node.fast rect{fill:var(--amber-soft);stroke:var(--amber);stroke-width:4}
+  .node.mid rect{fill:#fff;stroke:var(--amber);stroke-width:3;stroke-dasharray:5 3}
+  .node.meet rect{fill:var(--purple-soft);stroke:var(--purple);stroke-width:5}
+  .node.meet text{fill:#5b21b6}
+  .node.dup rect{fill:var(--green-soft);stroke:var(--green);stroke-width:5}
+  .node.dup text{fill:#166534}
+  .tag rect{stroke-width:2}
+  .tag text{font:700 12px sans-serif;text-anchor:middle;dominant-baseline:central}
+  .tag.s rect{fill:var(--blue);stroke:var(--blue)} .tag.s text{fill:#fff}
+  .tag.f rect{fill:var(--amber);stroke:var(--amber)} .tag.f text{fill:#fff}
+  .tag.ghost rect{fill:#fff;stroke:var(--amber);stroke-dasharray:4 3} .tag.ghost text{fill:#b45309}
+  .looplabel{font:600 12px sans-serif;fill:#a8a29e;text-anchor:middle}
+  .taillabel{font:600 12px sans-serif;fill:#a8a29e}
+  .duplabel{font:700 13px sans-serif;fill:#166534;text-anchor:middle}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:14px;height:12px;border-radius:5px;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-unseen::before{background:#faf8f4;border-color:#d6d3d1!important;border-style:dashed!important}
+  .lg-seen::before{background:#fff;border-color:#94a3b8!important}
+  .lg-slow::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-fast::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-meet::before{background:var(--purple-soft);border-color:var(--purple)!important}
+  .lg-dup::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-off::before{background:var(--gray-soft);border-color:var(--gray)!important}
+
+  pre.code{margin:0;font:12.5px/1.5 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.5em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.nu{color:#c2410c}.cm{color:#a8a29e;font-style:italic}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px;line-height:1.45}
+  .phase{display:inline-block;font:700 11px sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-right:6px;vertical-align:1px}
+  .phase.p1{background:var(--purple-soft);color:#5b21b6}
+  .phase.p2{background:var(--green-soft);color:#166534}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .idea p{margin:0 0 6px}
+  .idea p:last-child{margin:0}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 64px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1.15fr 1fr;gap:18px}
+  .arr{display:flex;gap:5px;flex-wrap:wrap}
+  .ac{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:46px}
+  .ac .who{font-size:16px;height:22px;line-height:22px}
+  .ac .ix{font:11px Menlo,monospace;color:var(--muted)}
+  .ac .v{width:46px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 17px Menlo,monospace;border:2px solid #94a3b8;background:#fff;transition:all .25s}
+  .ac.off .v{background:var(--gray-soft);border-color:var(--gray);color:#94a3b8}
+  .ac.s .v{background:var(--blue-soft);border-color:var(--blue)}
+  .ac.f .v{background:var(--amber-soft);border-color:var(--amber)}
+  .ac.sf .v{background:var(--purple-soft);border-color:var(--purple)}
+  .ac.dup .v{background:var(--green-soft);border-color:var(--green);color:#166534;box-shadow:0 0 0 4px #bbf7d0}
+  .read{margin-top:10px;font:13.5px Menlo,monospace;padding:8px 10px;border-radius:8px;background:#faf8f4;line-height:1.6}
+  .vars{display:flex;gap:12px;flex-wrap:wrap}
+  .var{flex:1;min-width:150px;border-radius:10px;padding:8px 12px;border:2px solid}
+  .var .k{font:12px Menlo,monospace;color:var(--muted)}
+  .var .v{font:700 24px Menlo,monospace}
+  .var.s{background:var(--blue-soft);border-color:var(--blue)} .var.s .v{color:#1d4ed8}
+  .var.f{background:var(--amber-soft);border-color:var(--amber)} .var.f .v{color:#b45309}
+  .var .pending{font-size:12px;color:#b45309;font-family:Menlo,monospace}
+  .info{margin-top:10px;padding:10px 12px;border-radius:8px;border:1px dashed var(--line);font-size:14px;line-height:1.55}
+  .info .big{font:700 20px Menlo,monospace}
+  .info .bs{color:#1d4ed8} .info .bf{color:#b45309} .info .bp{color:var(--purple)}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:280px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>287. Find the Duplicate Number — Fast &amp; Slow Pointers (Floyd's cycle detection)</h1>
+  <p>Read the array as arrows <b>i → nums[i]</b>. The duplicate value has <b>two arrows pointing into it</b>, so it's exactly where the path from index 0 enters a loop. Phase 1 finds <i>a</i> point in the loop. Phase 2 finds the <i>entrance</i>, which is the duplicate.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>nums as a graph <span style="text-transform:none;letter-spacing:0">(node = index, arrow i → nums[i])</span></h2>
+    <svg id="svg"></svg>
+    <div class="legend">
+      <span class="lg-unseen">not reached yet</span>
+      <span class="lg-seen">already passed</span>
+      <span class="lg-slow">🐢 slow</span>
+      <span class="lg-fast">🐇 fast</span>
+      <span class="lg-meet">phase 1 meeting point</span>
+      <span class="lg-dup">duplicate = loop entrance</span>
+      <span class="lg-off">never reached from index 0</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <p><b>Why there's a loop at the duplicate:</b> values are 1..n, so every index points somewhere valid and nothing points to index 0. Start at 0 and follow arrows: you must eventually revisit a node. The first revisited node has two arrows into it (one from the path, one from the loop). That means two indices hold the same value: <b>the duplicate</b>.</p>
+      <p><b>Phase 1</b> (slow +1, fast +2): same as Happy Number. Once both are in the loop, the gap shrinks by 1 per round, so they must meet somewhere in the loop.</p>
+      <p><b>Phase 2, the magic part:</b> let <b>F</b> = hops from the start to the entrance and <b>C</b> = loop length. At the meeting point slow walked k hops and fast walked 2k, so the extra k is a whole number of laps (a multiple of C). From the meeting point, F more hops gives k + F total, which is F past the entrance plus whole laps, so it lands <b>exactly on the entrance</b>. So reset slow to the start, move both 1 hop at a time, and after F hops they meet at the entrance.</p>
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n)</span>
+        <span class="cxw">n + 1 = len(nums). In phase 1, slow meets fast before finishing its first lap of the loop, so it takes at most F + C ≤ n + 1 hops. Phase 2 takes F more. Each hop is one array read.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(1)</span>
+        <span class="cxw">Only the two pointers, <code>slow</code> and <code>fast</code>. The array is read but never modified, and there's no hash set of seen values.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h2>nums (🐢 / 🐇 mark the index each pointer holds)</h2>
+      <div class="arr" id="arr"></div>
+      <div id="read"></div>
+      <div id="answer"></div>
+    </div>
+    <div class="panel">
+      <h2>Pointers</h2>
+      <div class="vars" id="vars"></div>
+      <div id="info"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1800">Slow</option>
+      <option value="1100" selected>Normal</option>
+      <option value="550">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">nums:</label>
+    <input type="text" id="input" value="[4,3,8,6,7,9,2,1,3,5]">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="[1,3,4,2,2]">#1 (→ 2)</button>
+    <button class="preset" data-t="[3,1,3,4,2]">#2 (→ 3)</button>
+    <button class="preset" data-t="[3,3,3,3,3]">#3 (→ 3)</button>
+    <button class="preset" data-t="[1,6,3,5,1,2,7,4]">driver #3 (→ 1)</button>
+    <button class="preset" data-t="[3,1,3,5,6,4,2]">driver #5 (→ 3)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">def</span> <span class="fn">find_duplicate</span>(nums):`,
+  `    <span class="cm"># Initialize the fast and slow pointers and make them point the first</span>`,
+  `    <span class="cm"># element of the array</span>`,
+  `    fast = slow = nums[<span class="nu">0</span>]`,
+  `    <span class="cm"># PART #1</span>`,
+  `    <span class="cm"># Traverse in array until the intersection point is found</span>`,
+  `    <span class="kw">while</span> <span class="bool">True</span>:`,
+  `        <span class="cm"># Move the slow pointer using the nums[slow] flow</span>`,
+  `        slow = nums[slow]`,
+  `        <span class="cm"># Move the fast pointer two times fast as the slow pointer using the </span>`,
+  `        <span class="cm"># nums[nums[fast]] flow </span>`,
+  `        fast = nums[nums[fast]]`,
+  `        <span class="cm"># Break the loop when slow pointer becomes equal to the fast pointer, i.e., </span>`,
+  `        <span class="cm"># if the intersection is found</span>`,
+  `        <span class="kw">if</span> slow == fast:`,
+  `            <span class="kw">break</span>`,
+  `    <span class="cm"># PART #2</span>`,
+  `    <span class="cm"># Make the slow pointer point the starting position of an array again, i.e.,</span>`,
+  `    <span class="cm"># start the slow pointer from starting position</span>`,
+  `    slow = nums[<span class="nu">0</span>]`,
+  `    <span class="cm"># Traverse in the array until the slow pointer becomes equal to the</span>`,
+  `    <span class="cm"># fast pointer</span>`,
+  `    <span class="kw">while</span> slow != fast:`,
+  `        <span class="cm"># Move the slow pointer using the nums[slow] flow</span>`,
+  `        slow = nums[slow]`,
+  `        <span class="cm"># Move the fast pointer slower than before, i.e., move the fast pointer</span>`,
+  `        <span class="cm"># using the nums[fast] flow</span>`,
+  `        fast = nums[fast]`,
+  `    <span class="cm"># Return the fast pointer as it points the duplicate number of the array</span>`,
+  `    <span class="kw">return</span> fast`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let nums = [], G = null, steps = [], idx = 0, timer = null, pos = {};
+
+// Path from index 0: 0, nums[0], nums[nums[0]], ... until a node repeats. c = position of the loop entrance.
+function buildGraph(a) {
+  const seq = [0], P = new Map([[0, 0]]);
+  let x = 0;
+  for (;;) {
+    x = a[x];
+    if (P.has(x)) { const c = P.get(x); return {seq, P, c, L: seq.length - c, E: x}; }
+    P.set(x, seq.length); seq.push(x);
+  }
+}
+// hops from node v to the entrance E (following arrows)
+function distToEntry(v) {
+  const {P, c, L} = G, p = P.get(v);
+  return p < c ? c - p : (L - (p - c)) % L;
+}
+// in the loop: how many hops fast is behind slow
+function gapOf(s, f) {
+  const {P, c, L} = G;
+  if (P.get(s) < c || P.get(f) < c) return null;
+  return ((P.get(s) - P.get(f)) % L + L) % L;
+}
+
+function simulate(a) {
+  nums = a; G = buildGraph(a);
+  const out = [], visited = new Set([0]);
+  let slow = null, fast = null, phase = 1, iter = 0;
+  const snap = (line, msg, extra = {}) => out.push({
+    line, msg, slow, fast, phase, iter, visited: new Set(visited), ...extra
+  });
+  const P1 = '<span class="phase p1">phase 1</span>', P2 = '<span class="phase p2">phase 2</span>';
+
+  snap(1, `Start at <b>index 0</b>. No value can be 0 (values are 1..${a.length - 1}), so nothing points back here. It's the beginning of the path.`);
+  fast = slow = a[0]; visited.add(slow);
+  snap(4, `<b>fast = slow = nums[0] = ${a[0]}</b>. Both pointers start one hop along the path, at index ${a[0]}.`,
+    {hops: [{from: 0, to: slow, who: 'slow'}], read: `nums[0] = ${a[0]}`});
+
+  for (;;) {
+    iter++;
+    const s0 = slow; slow = a[slow]; visited.add(slow);
+    snap(9, `${P1} Round ${iter}: 🐢 <b>slow = nums[${s0}] = ${slow}</b> (1 hop).`,
+      {hops: [{from: s0, to: slow, who: 'slow'}], read: `nums[${s0}] = ${slow}`});
+    const f0 = fast, m = a[fast]; visited.add(m);
+    snap(12, `${P1} 🐇 inner read: <b>nums[${f0}] = ${m}</b> (hop 1 of 2).`,
+      {hops: [{from: f0, to: m, who: 'fast'}], mid: m, read: `nums[${f0}] = ${m}`});
+    fast = a[m]; visited.add(fast);
+    const g = gapOf(slow, fast), gPrev = gapOf(s0, f0);
+    let tail = '';
+    if (g !== null && gPrev !== null) tail = ` In the loop, the gap went ${gPrev} → <b>${g}</b>. Fast closes in by 1 each round.`;
+    else if (g !== null) tail = ` Both are now in the loop. Fast is <b>${g}</b> hop${g === 1 ? '' : 's'} behind slow.`;
+    else if (G.P.get(fast) >= G.c) tail = ` Fast is already circling the loop while slow is still on the way in.`;
+    snap(12, `${P1} 🐇 outer read: <b>fast = nums[${m}] = ${fast}</b> (hop 2 of 2).` + tail,
+      {hops: [{from: m, to: fast, who: 'fast'}], read: `nums[nums[${f0}]] = nums[${m}] = ${fast}`});
+    if (slow === fast) {
+      snap(15, `${P1} <b>slow == fast == ${slow}</b> ✓. They met at index ${slow}, inside the loop. This is just <i>a</i> point in the loop, not necessarily the duplicate.`,
+        {meetAt: slow, cmp: `slow == fast → ${slow} == ${fast} → True`});
+      snap(16, `${P1} <b>break</b>. Phase 1 is done: we've proved there's a loop and parked 🐇 inside it.`, {meetAt: slow});
+      break;
+    }
+    snap(15, `${P1} slow (${slow}) ≠ fast (${fast}) → keep going.`, {cmp: `slow == fast → ${slow} == ${fast} → False`});
+  }
+
+  const meet = fast;
+  phase = 2;
+  slow = a[0];
+  const F = distToEntry(slow);
+  snap(20, `${P2} Reset <b>slow = nums[0] = ${slow}</b> (back to the start). 🐇 stays at the meeting point <b>${fast}</b>. ` +
+    `Both now need exactly <b>${F}</b> hop${F === 1 ? '' : 's'} to reach the loop entrance, so from here on <b>both move 1 hop</b> at a time.`,
+    {meetAt: meet, hops: [], showDist: true});
+
+  for (;;) {
+    const eq = slow === fast;
+    snap(23, `${P2} slow (${slow}) ${eq ? '==' : '≠'} fast (${fast})` + (eq ? ` → stop. They met at the loop entrance.` : ` → keep walking.`),
+      {meetAt: meet, showDist: true, cmp: `slow != fast → ${slow} != ${fast} → ${eq ? 'False' : 'True'}`});
+    if (eq) break;
+    const s0 = slow; slow = a[slow]; visited.add(slow);
+    snap(25, `${P2} 🐢 <b>slow = nums[${s0}] = ${slow}</b>.`, {meetAt: meet, showDist: true, hops: [{from: s0, to: slow, who: 'slow'}], read: `nums[${s0}] = ${slow}`});
+    const f0 = fast; fast = a[fast]; visited.add(fast);
+    snap(28, `${P2} 🐇 <b>fast = nums[${f0}] = ${fast}</b>. Only <b>1 hop</b> now, the same speed as slow.`, {meetAt: meet, showDist: true, hops: [{from: f0, to: fast, who: 'fast'}], read: `nums[${f0}] = ${fast}`});
+  }
+
+  const dupIdx = a.map((v, i) => v === fast ? i : -1).filter(i => i >= 0);
+  snap(30, `<b>return ${fast}</b>. Two indices hold ${fast} (<b>${dupIdx.map(i => `nums[${i}]`).join(' and ')}</b>), which is why two arrows lead into node ${fast}.`,
+    {final: true, dup: fast, dupIdx, meetAt: meet});
+  return out;
+}
+
+// ---------- layout ----------
+const W = 680, H = 440, CY = 200, NH = 40, NW = 48;
+function layout() {
+  const {seq, c, L} = G;
+  pos = {};
+  let entryX, R = 0, cx = 0;
+  if (L === 1) { entryX = W - 80; pos[seq[c]] = {x: entryX, y: CY}; }
+  else {
+    R = Math.max(90, Math.min(150, L * 16));
+    cx = W - R - 50; entryX = cx - R;
+    for (let k = 0; k < L; k++) {
+      const th = Math.PI + k * 2 * Math.PI / L;
+      pos[seq[c + k]] = {x: cx + R * Math.cos(th), y: CY + R * Math.sin(th)};
+    }
+  }
+  const avail = entryX - NW / 2 - 20 - c * NW;
+  let gap = Math.min(44, avail / c);
+  const zig = gap < 16;
+  let right = entryX - NW / 2;
+  for (let j = c - 1; j >= 0; j--) {
+    const x = right - gap - NW / 2;
+    pos[seq[j]] = {x, y: zig ? CY + ((c - j) % 2 ? -36 : 36) : CY};
+    right = x - NW / 2;
+  }
+  const off = nums.map((_, i) => i).filter(i => !G.P.has(i));
+  off.forEach((i, k) => { pos[i] = {x: 40 + (k % 11) * 58, y: H - 28 - Math.floor(k / 11) * 40, off: true}; });
+  G.R = R; G.cx = cx; G.off = off;
+  document.getElementById('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function edgePt(a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const t = Math.min(Math.abs(ux) > 1e-6 ? (NW / 2) / Math.abs(ux) : 1e9, Math.abs(uy) > 1e-6 ? (NH / 2) / Math.abs(uy) : 1e9);
+  return {x: a.x + ux * (t + 2), y: a.y + uy * (t + 2)};
+}
+
+function render() {
+  const s = steps[idx], {seq, c, L, E} = G;
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  let h = `<defs>`;
+  [['ar', '#94a3b8', 6], ['arf', '#e7e2d8', 6], ['ars', '#3b82f6', 4], ['arF', '#f59e0b', 4], ['arG', '#16a34a', 4]].forEach(([id, col, sz]) =>
+    h += `<marker id="${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="${sz}" markerHeight="${sz}" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${col}"/></marker>`);
+  h += `</defs>`;
+
+  if (L > 1) h += `<text class="looplabel" x="${G.cx}" y="${CY + 4}">loop of ${L}</text>`;
+  h += `<text class="taillabel" x="${Math.max(8, pos[0].x - NW / 2)}" y="${CY - (L > 1 ? Math.max(G.R, 70) + 20 : 100)}">start → (index 0: nothing points here)</text>`;
+  if (G.off.length) h += `<text class="taillabel" x="16" y="${H - 58}">never reached from index 0 (ignored):</text>`;
+
+  // edges along the path from 0
+  const intoE = new Set([seq[c - 1], seq[seq.length - 1]]);
+  for (let k = 0; k < seq.length; k++) {
+    const i = seq[k], j = nums[i];
+    const known = s.visited.has(i) && s.visited.has(j);
+    const hop = (s.hops || []).find(hp => hp.from === i && hp.to === j);
+    const into = s.final && j === E && intoE.has(i);
+    const cls = hop ? `hop-${hop.who}` : into ? 'into' : known ? '' : 'faint';
+    const mk = hop ? (hop.who === 'slow' ? 'ars' : 'arF') : into ? 'arG' : known ? 'ar' : 'arf';
+    if (i === j) {
+      const p = pos[i];
+      h += `<path class="edge ${cls}" d="M${p.x - 12},${p.y - NH / 2} C${p.x - 46},${p.y - 92} ${p.x + 46},${p.y - 92} ${p.x + 12},${p.y - NH / 2 - 2}" marker-end="url(#${mk})"/>`;
+      continue;
+    }
+    const a = edgePt(pos[i], pos[j]), b = edgePt(pos[j], pos[i]);
+    h += `<line class="edge ${cls}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" marker-end="url(#${mk})"/>`;
+  }
+
+  // nodes
+  const showFast = s.mid === undefined;
+  nums.forEach((_, i) => {
+    const p = pos[i];
+    let cls = p.off ? 'off' : s.visited.has(i) ? '' : 'unseen';
+    if (s.meetAt === i) cls = 'meet';
+    if (s.fast === i && showFast) cls = 'fast';
+    if (s.mid === i) cls = 'mid';
+    if (s.slow === i) cls = (s.fast === i && showFast) ? 'meet' : 'slow';
+    if (s.final && i === s.dup) cls = 'dup';
+    const w = p.off ? 40 : NW, hh = p.off ? 32 : NH;
+    h += `<g class="node ${cls}"><rect x="${p.x - w / 2}" y="${p.y - hh / 2}" width="${w}" height="${hh}" rx="10"/><text x="${p.x}" y="${p.y - (p.off ? 0 : 3)}">${i}</text>` +
+      (p.off ? '' : `<text class="sub" x="${p.x}" y="${p.y + 12}">→${nums[i]}</text>`) + `</g>`;
+  });
+  if (s.final) { const p = pos[s.dup]; h += `<text class="duplabel" style="text-anchor:end" x="${p.x + 6}" y="${p.y + NH / 2 + 18}">duplicate! 2 arrows in</text>`; }
+
+  const tag = (i, label, kind, above, faded) => {
+    const p = pos[i], tw = label.length * 7 + 22, y = above ? p.y - NH / 2 - 22 : p.y + NH / 2 + 22;
+    const ly = above ? p.y - NH / 2 - 10 : p.y + NH / 2 + 10;
+    return `<g opacity="${faded ? .35 : 1}"><line x1="${p.x}" y1="${ly}" x2="${p.x}" y2="${above ? p.y - NH / 2 - 2 : p.y + NH / 2 + 2}" stroke="${kind === 's' ? '#3b82f6' : '#f59e0b'}" stroke-width="2"/>` +
+      `<g class="tag ${kind}"><rect x="${p.x - tw / 2}" y="${y - 12}" width="${tw}" height="24" rx="12"/><text x="${p.x}" y="${y}">${label}</text></g></g>`;
+  };
+  if (!s.final) {
+    if (s.fast !== null) {
+      if (s.mid !== undefined) { h += tag(s.fast, '🐇 fast', 'f', false, true); h += tag(s.mid, '🐇 hop 1/2', 'ghost', false); }
+      else h += tag(s.fast, s.phase === 2 ? '🐇 fast (1 hop)' : '🐇 fast', 'f', false);
+    }
+    if (s.slow !== null) h += tag(s.slow, '🐢 slow', 's', true);
+  }
+  document.getElementById('svg').innerHTML = h;
+
+  // array
+  document.getElementById('arr').innerHTML = nums.map((v, i) => {
+    const hs = s.slow === i, hf = s.fast === i && showFast;
+    let cls = G.P.has(i) ? '' : 'off';
+    if (hs && hf) cls = 'sf'; else if (hs) cls = 's'; else if (hf) cls = 'f';
+    if (s.final && s.dupIdx.includes(i)) cls = 'dup';
+    return `<div class="ac ${cls}"><span class="ix">[${i}]</span><span class="v">${v}</span><span class="who">${hs && !s.final ? '🐢' : ''}${hf && !s.final ? '🐇' : ''}</span></div>`;
+  }).join('');
+  document.getElementById('read').innerHTML = (s.read || s.cmp) ? `<div class="read">${s.read ? 'read: ' + s.read : ''}${s.read && s.cmp ? '<br>' : ''}${s.cmp || ''}</div>` : '';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return ${s.dup} — nums[${s.dupIdx.join('] = nums[')}] = ${s.dup}</div>` : '';
+
+  // pointers
+  const fmt = v => v === null ? '—' : v;
+  document.getElementById('vars').innerHTML =
+    `<div class="var s"><div class="k">🐢 slow (+1 hop)</div><div class="v">${fmt(s.slow)}</div></div>` +
+    `<div class="var f"><div class="k">🐇 fast (${s.phase === 1 ? '+2 hops' : '+1 hop now'})</div><div class="v">${fmt(s.fast)}</div>` +
+    (s.mid !== undefined ? `<div class="pending">inner nums[${s.fast}] = ${s.mid}, not assigned yet</div>` : '') + `</div>`;
+
+  let info = '';
+  if (s.final) {
+    info = `<div class="info">Both pointers arrived together at node <b class="big bp" style="color:var(--green)">${s.dup}</b>, the loop entrance = the duplicate.</div>`;
+  } else if (s.phase === 1 && s.slow !== null) {
+    const g = gapOf(s.slow, s.fast);
+    info = `<div class="info"><b>Phase 1:</b> find any point inside the loop.<br>` + (g === null
+      ? `<span class="empty">Gap appears once both pointers are in the loop${L > 1 ? ` (loop of ${L})` : ''}.</span>`
+      : g === 0 ? `Gap <span class="big bp">0</span> → they meet.`
+      : `🐇 is <span class="big bp">${g}</span> hop${g === 1 ? '' : 's'} behind 🐢 around the loop. It drops by 1 each round.`) + `</div>`;
+  } else if (s.showDist) {
+    const ds = distToEntry(s.slow), df = distToEntry(s.fast);
+    const laps = (ds - df) / (L || 1);
+    info = `<div class="info"><b>Phase 2:</b> distance to the loop entrance (the visualization can see the entrance; the code can't):<br>` +
+      `🐢 slow needs <span class="big bs">${ds}</span> hop${ds === 1 ? '' : 's'} · 🐇 fast needs <span class="big bf">${df}</span>` +
+      (laps > 0 ? ` <span class="hint">+ ${laps} full lap${laps === 1 ? '' : 's'} of ${L} = ${ds}</span>` : '') +
+      `<br>Same number of hops at the same speed, so they <b>arrive at the entrance together</b>.</div>`;
+  }
+  document.getElementById('info').innerHTML = info;
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function parse(str) {
+  const a = JSON.parse(str.trim().startsWith('[') ? str : '[' + str + ']');
+  if (!Array.isArray(a) || a.length < 2) throw new Error('need at least 2 numbers');
+  if (a.length > 16) throw new Error('keep it to 16 numbers or fewer so the graph fits');
+  const n = a.length - 1;
+  if (a.some(v => !Number.isInteger(v) || v < 1 || v > n)) throw new Error(`every value must be an integer in 1..${n} (length − 1)`);
+  return a;
+}
+function load() {
+  stop();
+  let a;
+  try { a = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>[1,3,4,2,2]</code>.`;
+    return;
+  }
+  steps = simulate(a);
+  layout();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
