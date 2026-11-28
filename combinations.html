@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>77. Combinations — Backtracking Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #treeSvg{width:100%;height:380px;display:block}
+  .band{fill:transparent}
+  .band.cur{fill:#fffbeb}
+  .bandlabel{font:600 11px sans-serif;fill:#c0b9ae}
+  .bandlabel.cur{fill:#b45309}
+  .edge{stroke:var(--gray);stroke-width:3}
+  .edge.on{stroke:var(--blue);stroke-width:5}
+  .edge.pr{stroke:var(--red);stroke-width:2;stroke-dasharray:5 4;opacity:.7}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font-weight:700;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.onstack circle{fill:var(--blue-soft);stroke:var(--blue)}
+  .node.found circle{fill:var(--green-soft);stroke:var(--green);stroke-width:4}
+  .node.found text{fill:#166534}
+  .node.done circle{fill:var(--gray-soft);stroke:var(--gray)}
+  .node.done text{fill:#94a3b8}
+  .node.active circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
+  .node.pruned circle{fill:var(--red-soft);stroke:var(--red);stroke-dasharray:4 3}
+  .node.pruned text{fill:var(--red)}
+  .combo{font:700 11px Menlo,monospace;text-anchor:middle;fill:#166534}
+  .scissors{font-size:11px;text-anchor:middle;fill:var(--red)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-active::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-stack::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-seen::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-hidden::before{background:var(--gray-soft);border-color:var(--gray)!important}
+  .lg-red::before{background:var(--red-soft);border-color:var(--red)!important;border-style:dashed!important}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.num{color:#c2410c}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 104px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;display:flex;justify-content:space-between;gap:12px}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .frame .st{font-weight:500;color:#a8a29e}
+  .frame .st .run{color:var(--blue)}
+  .frame .st .ok{color:var(--green)}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .sub{font-size:12px;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+  .sub:first-of-type{margin-top:0}
+  .nums{display:flex;gap:6px;flex-wrap:wrap}
+  .nc{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 16px Menlo,monospace;background:#fff;border:2px solid #cbd5e1;transition:all .25s}
+  .nc.used{background:var(--gray-soft);color:#b6bfcb;border-color:var(--gray-soft)}
+  .nc.inpath{background:var(--blue-soft);border-color:var(--blue);color:#1d4ed8}
+  .nc.cur{background:var(--amber-soft);border-color:var(--amber);color:#b45309;box-shadow:0 0 0 4px #fde68a}
+  .nc.pruned{background:var(--red-soft);border-color:var(--red);border-style:dashed;color:var(--red)}
+  .pathrow{display:flex;gap:6px;align-items:center;min-height:40px;font:14px Menlo,monospace}
+  .pc{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 15px Menlo,monospace;background:var(--blue-soft);border:2px solid var(--blue);animation:pop .3s}
+  .ps{min-width:36px;height:36px;border-radius:8px;border:2px dashed #d6d3d1}
+  .rlist{display:flex;gap:6px;flex-wrap:wrap;min-height:34px}
+  .rcombo{padding:5px 9px;border-radius:8px;font:700 13px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534}
+  .rcombo.new{animation:pop .35s;box-shadow:0 0 0 4px #bbf7d0}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s;word-break:break-word}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:180px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>77. Combinations — Backtracking (choose, explore, un-choose)</h1>
+  <p>Build <code>path</code> one number at a time, always picking numbers <b>larger</b> than the last one, so each set is produced exactly once. When <code>path</code> has <b>k</b> numbers, save a copy. Skip starting numbers that leave too few numbers to finish.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Recursion tree <span style="text-transform:none;letter-spacing:0">(each node = the number just added to <code>path</code>)</span></h2>
+    <svg id="treeSvg"></svg>
+    <div class="legend">
+      <span class="lg-active">current call / number being tried</span>
+      <span class="lg-stack">on the current path (call waiting)</span>
+      <span class="lg-seen">len(path) == k → saved</span>
+      <span class="lg-hidden">finished, popped</span>
+      <span class="lg-red">pruned: too few numbers left</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b><code>start</code> stops duplicates.</b> Each call only picks from <code>start..n</code>, and the next call starts at
+      <code>i + 1</code>, so every path is strictly increasing. <code>[2,1]</code> can never be built, only <code>[1,2]</code>.<br>
+      <b>The pruning is in the loop's upper bound.</b> With <code>need = k - len(path)</code> slots left, picking <code>i</code>
+      leaves <code>n - i</code> numbers for <code>need - 1</code> slots. So <code>i</code> can go up to <code>n - need + 1</code>,
+      which is why the range ends at <code>n - need + 2</code>.<br>
+      <b><code>path[:]</code> copies.</b> <code>path</code> keeps changing as we pop, so we save a snapshot, not the list itself.
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(k·C(n,k))</span>
+        <span class="cxw">There are C(n,k) combinations and each is copied in O(k). Thanks to pruning, every call leads to at least one saved combination, so there are at most k·C(n,k) + 1 calls.</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(k)</span>
+        <span class="cxw">Extra memory is the recursion stack plus <code>path</code>, both at most k deep. The output itself holds C(n,k) lists of length k, so O(k·C(n,k)) if you count it.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel">
+      <div class="sub">numbers 1..n (for the top call)</div>
+      <div class="nums" id="nums"></div>
+      <div class="sub"><code>path</code> (k slots)</div>
+      <div class="pathrow" id="path"></div>
+      <div class="sub"><code>result</code></div>
+      <div class="rlist" id="result"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1600">Slow</option>
+      <option value="1000" selected>Normal</option>
+      <option value="500">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">n, k:</label>
+    <input type="text" id="input" value="4, 2">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="4, 2">#1 n=4,k=2 (→ 6 combos)</button>
+    <button class="preset" data-t="1, 1">#2 n=1,k=1 (→ [[1]])</button>
+    <button class="preset" data-t="5, 3">n=5,k=3 (→ 10)</button>
+    <button class="preset" data-t="4, 4">n=4,k=4 (heavy pruning)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">class</span> <span class="ty">Solution</span>:`,
+  `    <span class="kw">def</span> <span class="fn">combine</span>(self, n: <span class="ty">int</span>, k: <span class="ty">int</span>) -> <span class="ty">list</span>[<span class="ty">list</span>[<span class="ty">int</span>]]:`,
+  `        result = []`,
+  `        path = []`,
+  ``,
+  `        <span class="kw">def</span> <span class="fn">backtrack</span>(start: <span class="ty">int</span>) -> <span class="bool">None</span>:`,
+  `            <span class="kw">if</span> len(path) == k:`,
+  `                result.append(path[:])`,
+  `                <span class="kw">return</span>`,
+  `            <span class="kw">for</span> i <span class="kw">in</span> range(start, n - (k - len(path)) + <span class="num">2</span>):`,
+  `                path.append(i)`,
+  `                backtrack(i + <span class="num">1</span>)`,
+  `                path.pop()`,
+  ``,
+  `        backtrack(<span class="num">1</span>)`,
+  `        <span class="kw">return</span> result`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let nodes = [], steps = [], idx = 0, timer = null, N = 0, K = 0, rowH = 0, R = 20;
+const fmt = a => '[' + a.join(',') + ']';
+
+function parse(str) {
+  const m = str.match(/-?\d+/g);
+  if (!m || m.length !== 2) throw new Error('expected two integers n, k');
+  const [n, k] = m.map(Number);
+  if (n < 1 || n > 10) throw new Error('n must be between 1 and 10 here (to keep the tree drawable)');
+  if (k < 1 || k > n) throw new Error('k must satisfy 1 ≤ k ≤ n');
+  return [n, k];
+}
+
+function simulate(n, k) {
+  nodes = [];
+  const mk = (val, depth, parent, pruned = false) => {
+    const nd = {id: nodes.length, val, depth, parent, children: [], pruned, resIdx: null};
+    nodes.push(nd);
+    if (parent !== null) nodes[parent].children.push(nd.id);
+    return nd;
+  };
+  const out = [], stack = [], path = [], result = [];
+  const snap = (line, msg, extra = {}) => out.push({
+    line, msg, vis: nodes.length, stack: stack.map(f => ({...f})), path: [...path],
+    result: result.map(r => [...r]), ...extra
+  });
+
+  const root = mk(null, 0, null);
+  snap(3, `<b>result = []</b> will collect every combination of <b>${k}</b> numbers from 1..${n}.`);
+  snap(4, `<b>path = []</b> is the combination being built. We add and remove numbers from it as we explore.`);
+  snap(15, `Start the search: <b>backtrack(1)</b>. The first number can be anything from 1 up.`);
+
+  function bt(start, node) {
+    const f = {start, node: node.id, i: null, end: null, plen: path.length, status: 'check'};
+    stack.push(f);
+    const full = path.length === k;
+    snap(7, `<b>backtrack(start=${start})</b> with path = <b>${fmt(path)}</b>: len(path) = ${path.length} ${full ? '==' : '≠'} k = ${k}` +
+      (full ? ' ✓ — the combination is complete.' : ` → still need <b>${k - path.length}</b> more.`));
+    if (full) {
+      node.resIdx = result.length;
+      result.push([...path]);
+      f.status = 'saved';
+      snap(8, `Save a <b>copy</b>: result.append(${fmt(path)}). That's combination #${result.length}.`, {appended: result.length - 1});
+      snap(9, `<b>return</b> to the caller, which will pop ${path[path.length - 1]} and try the next number.`);
+      stack.pop();
+      return;
+    }
+    const need = k - path.length, end = n - need + 2;
+    f.end = end; f.status = 'loop';
+    const tries = [], cut = [];
+    for (let v = start; v <= n; v++) (v < end ? tries : cut).push(v);
+    cut.forEach(v => mk(v, path.length + 1, node.id, true));
+    snap(10, `range(${start}, ${n} - (${k} - ${path.length}) + 2) = <b>range(${start}, ${end})</b> → try i in <b>${fmt(tries)}</b>.` +
+      (cut.length ? ` <span style="color:var(--red)"><b>Pruned ${cut.join(', ')}</b></span>: starting there leaves fewer than ${need - 1} number${need - 1 === 1 ? '' : 's'} after it for the remaining ${need - 1} slot${need - 1 === 1 ? '' : 's'}.` : ' Nothing to prune here.'),
+      {range: true});
+    for (let i = start; i < end; i++) {
+      f.i = i;
+      const child = mk(i, path.length + 1, node.id);
+      path.push(i);
+      snap(11, `i = <b>${i}</b>: choose it. path.append(${i}) → path = <b>${fmt(path)}</b>.`, {focus: child.id});
+      snap(12, `Explore: <b>backtrack(${i + 1})</b>. Only numbers greater than ${i} can come next.`, {focus: child.id});
+      bt(i + 1, child);
+      path.pop();
+      snap(13, `Back in backtrack(${start}). Un-choose: path.pop() removes <b>${i}</b> → path = <b>${fmt(path)}</b>.`, {popped: child.id});
+    }
+    f.i = null; f.status = 'done';
+    snap(10, `Loop over range(${start}, ${end}) is finished` + (cut.length ? ` (skipped pruned ${cut.join(', ')})` : '') +
+      `. backtrack(${start}) with path = ${fmt(path)} <b>returns</b>.`);
+    stack.pop();
+  }
+
+  bt(1, root);
+  snap(16, `Search finished. Return <b>${result.length}</b> combination${result.length === 1 ? '' : 's'}: <b>${result.map(fmt).join(', ')}</b>.`, {final: true});
+  return out;
+}
+
+const W = 640, H = 380, PADY = 40, LEFT = 86, RIGHT = 24;
+function layout() {
+  let x = 0;
+  (function place(id) {
+    const nd = nodes[id];
+    nd.kids = [...nd.children].sort((a, b) => nodes[a].val - nodes[b].val);
+    if (!nd.kids.length) nd.x = x++;
+    else { nd.kids.forEach(place); nd.x = (nodes[nd.kids[0]].x + nodes[nd.kids[nd.kids.length - 1]].x) / 2; }
+  })(0);
+  const colW = x <= 1 ? 0 : (W - LEFT - RIGHT) / (x - 1);
+  rowH = K === 0 ? 0 : (H - PADY - 46) / K;
+  R = Math.max(9, Math.min(20, colW ? colW * 0.42 : 20, rowH * 0.32));
+  nodes.forEach(nd => {
+    nd.px = x <= 1 ? (LEFT + W - RIGHT) / 2 : LEFT + nd.x * colW;
+    nd.py = PADY + nd.depth * rowH;
+  });
+  document.getElementById('treeSvg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', k + 1 === s.line));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  const onStack = new Set(s.stack.map(f => f.node));
+  const top = s.stack[s.stack.length - 1];
+  const active = s.focus !== undefined ? s.focus : (top ? top.node : null);
+  const curDepth = active !== null ? nodes[active].depth : null;
+
+  let html = '';
+  for (let d = 0; d <= K; d++) {
+    const y = PADY + d * rowH, cur = curDepth === d && !s.final;
+    html += `<rect class="band ${cur ? 'cur' : ''}" x="4" y="${y - Math.min(26, rowH / 2)}" width="${W - 8}" height="${Math.min(52, rowH)}" rx="10"/>`;
+    html += `<text class="bandlabel ${cur ? 'cur' : ''}" x="10" y="${y + 4}">len(path)=${d}</text>`;
+  }
+  const shown = nodes.filter(nd => nd.id < s.vis);
+  shown.forEach(nd => {
+    if (nd.parent === null) return;
+    const p = nodes[nd.parent];
+    const on = onStack.has(p.id) && (onStack.has(nd.id) || nd.id === active);
+    html += `<line class="edge ${nd.pruned ? 'pr' : on ? 'on' : ''}" x1="${p.px}" y1="${p.py}" x2="${nd.px}" y2="${nd.py}"/>`;
+  });
+  const fs = Math.max(10, Math.min(17, R * 0.85));
+  shown.forEach(nd => {
+    let cls = 'done';
+    if (nd.pruned) cls = 'pruned';
+    else if (nd.id === active && !s.final) cls = 'active';
+    else if (nd.resIdx !== null && nd.resIdx < s.result.length) cls = 'found';
+    else if (onStack.has(nd.id) || nd.id === s.focus) cls = 'onstack';
+    else if (s.final && nd.id === 0) cls = 'done';
+    const label = nd.parent === null ? '[ ]' : nd.val;
+    html += `<g class="node ${cls}"><circle cx="${nd.px}" cy="${nd.py}" r="${R}"/><text x="${nd.px}" y="${nd.py}" font-size="${nd.parent === null ? fs * 0.8 : fs}">${label}</text></g>`;
+    if (cls === 'found') html += `<text class="combo" x="${nd.px}" y="${nd.py + R + 13}">${fmt(s.result[nd.resIdx])}</text>`;
+    if (nd.pruned) html += `<text class="scissors" x="${nd.px}" y="${nd.py + R + 12}">✂</text>`;
+  });
+  document.getElementById('treeSvg').innerHTML = html;
+
+  // call stack
+  const stEl = document.getElementById('stack');
+  stEl.innerHTML = s.stack.length
+    ? s.stack.map((f, k) => {
+        const p = s.path.slice(0, f.plen);
+        let st = f.status === 'saved' ? '<span class="ok">saved ✓</span>'
+          : f.i !== null ? `<span class="run">i=${f.i} …</span>`
+          : f.status === 'done' ? 'loop done' : f.end !== null ? `range(${f.start},${f.end})` : 'check len';
+        return `<div class="frame ${k === s.stack.length - 1 ? 'top' : ''}"><span>backtrack(${f.start})  path=${fmt(p)}</span><span class="st">${st}</span></div>`;
+      }).join('')
+    : '<span class="empty">no active calls</span>';
+
+  // numbers 1..n
+  const inPath = new Set(s.path);
+  let nh = '';
+  for (let v = 1; v <= N; v++) {
+    let c = '';
+    if (top && !s.final) {
+      if (top.i === v && s.focus !== undefined) c = 'cur';
+      else if (inPath.has(v)) c = 'inpath';
+      else if (v < top.start) c = 'used';
+      else if (top.end !== null && v >= top.end) c = 'pruned';
+    }
+    nh += `<div class="nc ${c}">${v}</div>`;
+  }
+  document.getElementById('nums').innerHTML = nh;
+
+  // path
+  let ph = s.path.map(v => `<div class="pc">${v}</div>`).join('');
+  for (let j = s.path.length; j < K; j++) ph += '<div class="ps"></div>';
+  document.getElementById('path').innerHTML = ph;
+
+  // result
+  document.getElementById('result').innerHTML = s.result.length
+    ? s.result.map((r, j) => `<span class="rcombo ${s.appended === j ? 'new' : ''}">${fmt(r)}</span>`).join('')
+    : '<span class="empty">[]</span>';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return [${s.result.map(fmt).join(',')}]</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  let n, k;
+  try { [n, k] = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>4, 2</code>.`;
+    return;
+  }
+  const newSteps = simulate(n, k);
+  const leaves = nodes.filter(nd => !nd.children.length).length;
+  if (leaves > 26) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Too big to draw:</b> n=${n}, k=${k} gives a tree with ${leaves} leaves. Try something with at most ~20 combinations (e.g. 5, 3 or 6, 2).`;
+    if (steps.length) { simulate(N, K); layout(); }
+    return;
+  }
+  N = n; K = k; steps = newSteps;
+  layout();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
