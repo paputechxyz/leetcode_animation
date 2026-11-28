@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeetCode Animations</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --violet:#7c3aed; --violet-soft:#ede9fe; --teal:#0f766e; --teal-soft:#ccfbf1;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:28px 28px 8px;max-width:1180px;margin:0 auto}
+  h1{margin:0;font-size:26px}
+  header p{margin:6px 0 0;color:var(--muted);font-size:14px}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  input[type=search]{font:14px -apple-system,sans-serif;padding:8px 12px;border-radius:8px;border:1px solid var(--line);width:280px;background:#fff}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);text-decoration:none}
+  .chip:hover{background:#f3f0ea}
+  .chip b{color:var(--muted);font-weight:600;margin-left:3px}
+  main{max-width:1180px;margin:0 auto;padding:8px 28px 36px}
+  section{margin-top:22px}
+  section h2{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  section h2 .dot{width:12px;height:12px;border-radius:50%;border:2px solid}
+  section h2 .n{font:600 11px Menlo,monospace;background:#fff;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
+  section h2 .desc{text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:#a8a29e}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+  a.card{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;padding:12px 14px;text-decoration:none;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s}
+  a.card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
+  .top{display:flex;gap:8px;align-items:baseline}
+  .num{font:700 13px Menlo,monospace;color:var(--c)}
+  .title{font-weight:650;font-size:15px}
+  .tech{font-size:13px;color:#57534e;line-height:1.4}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+  .tag{font-size:11px;padding:2px 7px;border-radius:999px;background:var(--gray-soft);color:#64748b}
+  .none{color:var(--muted);font-style:italic;margin-top:24px}
+  footer{max-width:1180px;margin:0 auto;padding:0 28px 30px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>LeetCode Animations</h1>
+  <p>Step-through animations of Python solutions: code highlighting, state panels, custom inputs and time/space complexity for each one.</p>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search by number, title or technique…" autofocus>
+    <div class="chips" id="chips"></div>
+  </div>
+</header>
+<main id="main"></main>
+<footer id="foot"></footer>
+
+<script>
+// To add a new animation: append one entry to PROBLEMS with its group key.
+const GROUPS = [
+  {key: 'tree',     name: 'Binary Tree',             desc: 'DFS and BFS on trees',                        c: '#16a34a', soft: '#dcfce7'},
+  {key: 'back',     name: 'Backtracking',            desc: 'choose, explore, un-choose',                  c: '#7c3aed', soft: '#ede9fe'},
+  {key: 'ptr',      name: 'Two Pointers',            desc: 'fast & slow pointers, left/right pointers',   c: '#3b82f6', soft: '#dbeafe'},
+  {key: 'window',   name: 'Sliding Window',          desc: 'grow right, shrink left',                     c: '#0f766e', soft: '#ccfbf1'},
+  {key: 'graph',    name: 'Graph & Grid',            desc: 'grid DFS, union-find',                        c: '#e11d48', soft: '#ffe4e6'},
+  {key: 'heap',     name: 'Heap / Priority Queue',   desc: 'always take the smallest next',               c: '#f59e0b', soft: '#fef3c7'},
+  {key: 'bits',     name: 'Bits & Math',             desc: 'binary arithmetic, bit shifts',               c: '#64748b', soft: '#f1f5f9'},
+];
+
+const PROBLEMS = [
+  // Binary Tree
+  {n: 102, title: 'Binary Tree Level Order Traversal', slug: 'binary-tree-level-order-traversal', g: 'tree', tech: 'BFS with a queue', tags: ['BFS', 'queue']},
+  {n: 112, title: 'Path Sum', slug: 'path-sum', g: 'tree', tech: 'DFS, subtracting as we go', tags: ['DFS']},
+  {n: 199, title: 'Binary Tree Right Side View', slug: 'binary-tree-right-side-view', g: 'tree', tech: 'DFS, right child first', tags: ['DFS']},
+  {n: 226, title: 'Invert Binary Tree', slug: 'invert-binary-tree', g: 'tree', tech: 'swap, then recurse', tags: ['DFS']},
+  {n: 257, title: 'Binary Tree Paths', slug: 'binary-tree-paths', g: 'tree', tech: 'DFS with backtracking', tags: ['DFS', 'backtracking']},
+  {n: 404, title: 'Sum of Left Leaves', slug: 'sum-of-left-leaves', g: 'tree', tech: 'DFS with an is_left flag', tags: ['DFS']},
+  {n: 783, title: 'Minimum Distance Between BST Nodes', slug: 'minimum-distance-between-bst-nodes', g: 'tree', tech: 'In-order DFS', tags: ['BST', 'in-order']},
+  // Backtracking
+  {n: 46, title: 'Permutations', slug: 'permutations', g: 'back', tech: 'Backtracking with a used[] array', tags: ['recursion tree']},
+  {n: 77, title: 'Combinations', slug: 'combinations', g: 'back', tech: 'Backtracking with pruning', tags: ['recursion tree', 'pruning']},
+  // Two Pointers
+  {n: 202, title: 'Happy Number', slug: 'happy-number', g: 'ptr', tech: "Fast & slow pointers (Floyd's cycle detection)", tags: ['cycle detection']},
+  {n: 234, title: 'Palindrome Linked List', slug: 'palindrome-linked-list', g: 'ptr', tech: 'Fast & slow pointers + reverse second half', tags: ['linked list']},
+  {n: 287, title: 'Find the Duplicate Number', slug: 'find-the-duplicate-number', g: 'ptr', tech: "Fast & slow pointers (Floyd's cycle detection)", tags: ['cycle detection', 'array']},
+  {n: 680, title: 'Valid Palindrome II', slug: 'valid-palindrome-ii', g: 'ptr', tech: 'Two pointers with one delete', tags: ['string']},
+  {n: 876, title: 'Middle of the Linked List', slug: 'middle-of-the-linked-list', g: 'ptr', tech: 'Fast & slow pointers', tags: ['linked list']},
+  // Sliding Window
+  {n: 424, title: 'Longest Repeating Character Replacement', slug: 'longest-repeating-character-replacement', g: 'window', tech: 'Sliding window with a count map', tags: ['string', 'hash map']},
+  // Graph & Grid
+  {n: 323, title: 'Number of Connected Components in an Undirected Graph', slug: 'number-of-connected-components-in-an-undirected-graph', g: 'graph', tech: 'Union-Find', tags: ['union-find']},
+  {n: 733, title: 'Flood Fill', slug: 'flood-fill', g: 'graph', tech: 'DFS on a grid', tags: ['DFS', 'grid']},
+  // Heap
+  {n: 373, title: 'Find K Pairs with Smallest Sums', slug: 'find-k-pairs-with-smallest-sums', g: 'heap', tech: 'One candidate per row, in a min-heap', tags: ['min-heap']},
+  {n: null, title: 'Service Dependency Load Balancer', slug: 'service-dependency-load-balancer', g: 'heap', tech: 'Memoized DFS + min-heap', tags: ['min-heap', 'memoization', 'DFS']},
+  // Bits & Math
+  {n: 67, title: 'Add Binary', slug: 'add-binary', g: 'bits', tech: 'Column addition from the right, with a carry', tags: ['string', 'math']},
+  {n: 190, title: 'Reverse Bits', slug: 'reverse-bits', g: 'bits', tech: 'Pop from the right of n, push onto the right of result', tags: ['bit shift']},
+];
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const norm = s => s.toLowerCase();
+
+function render() {
+  const q = norm(document.getElementById('q').value.trim());
+  const hit = p => !q || norm(`${p.n ?? ''} ${p.title} ${p.tech} ${p.tags.join(' ')} ${GROUPS.find(g => g.key === p.g).name}`).includes(q);
+  let html = '', chips = '', total = 0;
+  GROUPS.forEach(g => {
+    const list = PROBLEMS.filter(p => p.g === g.key && hit(p)).sort((a, b) => (a.n ?? 1e9) - (b.n ?? 1e9));
+    if (!list.length) return;
+    total += list.length;
+    chips += `<a class="chip" href="#${g.key}">${g.name}<b>${list.length}</b></a>`;
+    html += `<section id="${g.key}"><h2><span class="dot" style="background:${g.soft};border-color:${g.c}"></span>${g.name}` +
+      `<span class="n">${list.length}</span><span class="desc">${g.desc}</span></h2><div class="grid">` +
+      list.map(p => `<a class="card" style="--c:${g.c}" href="${p.slug}.html">
+          <div class="top"><span class="num">${p.n ? p.n + '.' : '★'}</span><span class="title">${esc(p.title)}</span></div>
+          <div class="tech">${esc(p.tech)}</div>
+          <div class="tags">${p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+        </a>`).join('') + '</div></section>';
+  });
+  document.getElementById('main').innerHTML = html || `<div class="none">No animations match “${esc(q)}”.</div>`;
+  document.getElementById('chips').innerHTML = chips;
+  document.getElementById('foot').textContent = `${total} of ${PROBLEMS.length} animations shown · ★ = not a numbered LeetCode problem`;
+}
+document.getElementById('q').addEventListener('input', render);
+render();
+</script>
+</body>
+</html>
