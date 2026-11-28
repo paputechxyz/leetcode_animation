@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>46. Permutations — Backtracking Animation</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fff; --ink:#2d2a26; --muted:#8a837a; --line:#d9d3c7;
+    --blue:#3b82f6; --blue-soft:#dbeafe; --amber:#f59e0b; --amber-soft:#fef3c7;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#e11d48; --red-soft:#ffe4e6;
+    --gray:#cbd5e1; --gray-soft:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px 6px}
+  h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;padding:14px 28px 28px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  #treeSvg{width:100%;height:380px;display:block}
+  .band{fill:transparent}
+  .band.cur{fill:#fffbeb}
+  .bandlabel{font:600 11px sans-serif;fill:#c0b9ae}
+  .bandlabel.cur{fill:#b45309}
+  .edge{stroke:var(--gray);stroke-width:3}
+  .edge.on{stroke:var(--blue);stroke-width:5}
+  .edge.skip{stroke:var(--red);stroke-width:2;stroke-dasharray:5 4}
+  .node circle{fill:#fff;stroke:#94a3b8;stroke-width:3;transition:all .3s}
+  .node text{font-weight:700;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+  .node.onstack circle{fill:var(--blue-soft);stroke:var(--blue)}
+  .node.found circle{fill:var(--green-soft);stroke:var(--green);stroke-width:4}
+  .node.found text{fill:#166534}
+  .node.done circle{fill:var(--gray-soft);stroke:var(--gray)}
+  .node.done text{fill:#94a3b8}
+  .node.active circle{fill:var(--amber-soft);stroke:var(--amber);stroke-width:5}
+  .node.skip circle{fill:var(--red-soft);stroke:var(--red);stroke-dasharray:4 3}
+  .node.skip text{fill:var(--red)}
+  .combo{font:700 10px Menlo,monospace;text-anchor:middle;fill:#166534}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:2px solid}
+  .lg-active::before{background:var(--amber-soft);border-color:var(--amber)!important}
+  .lg-stack::before{background:var(--blue-soft);border-color:var(--blue)!important}
+  .lg-seen::before{background:var(--green-soft);border-color:var(--green)!important}
+  .lg-hidden::before{background:var(--gray-soft);border-color:var(--gray)!important}
+  .lg-red::before{background:var(--red-soft);border-color:var(--red)!important;border-style:dashed!important}
+
+  pre.code{margin:0;font:13px/1.55 "SF Mono",Menlo,Consolas,monospace;counter-reset:ln;overflow-x:auto}
+  pre.code div{padding:0 8px 0 0;border-left:4px solid transparent;border-radius:3px;white-space:pre;transition:background .2s;min-height:1.55em}
+  pre.code div::before{counter-increment:ln;content:counter(ln);display:inline-block;width:28px;text-align:right;margin-right:12px;color:#c0b9ae}
+  pre.code div.hl{background:var(--amber-soft);border-left-color:var(--amber)}
+  .kw{color:#7c3aed}.fn{color:#0369a1}.ty{color:#0f766e}.bool{color:#c2410c}.num{color:#c2410c}
+
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:15px;min-height:44px}
+  .idea{margin-top:14px;font-size:13.5px;line-height:1.5;color:#57534e;background:#faf8f4;border-radius:8px;padding:10px 12px}
+  .cx{margin-top:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cxrow{display:grid;grid-template-columns:56px 84px 1fr;gap:10px;align-items:baseline;padding:8px 12px;font-size:13.5px}
+  .cxrow + .cxrow{border-top:1px solid var(--line)}
+  .cxk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .cxv{font:700 15px Menlo,monospace;color:#7c3aed}
+  .cxw{color:#57534e;line-height:1.45}
+  .bottom{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1.1fr;gap:18px}
+  .stack{display:flex;flex-direction:column-reverse;gap:4px;min-height:42px}
+  .frame{font-family:Menlo,monospace;font-size:13px;padding:5px 10px;border-radius:6px;background:#f8fafc;border:1px solid var(--line);animation:pop .25s;display:flex;justify-content:space-between;gap:12px}
+  .frame.top{background:var(--amber-soft);border-color:var(--amber);font-weight:700}
+  .frame .st{font-weight:500;color:#a8a29e}
+  .frame .st .run{color:var(--blue)}
+  .frame .st .ok{color:var(--green)}
+  .empty{color:var(--muted);font-style:italic;font-size:14px}
+  .sub{font-size:12px;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+  .sub:first-of-type{margin-top:0}
+  .arr{display:grid;grid-template-columns:62px repeat(var(--n),48px);gap:4px 6px;align-items:center}
+  .rl{font:12px Menlo,monospace;color:var(--muted);text-align:right;padding-right:4px}
+  .ix{font:11px Menlo,monospace;color:var(--muted);text-align:center}
+  .nc{height:42px;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 16px Menlo,monospace;background:#fff;border:2px solid #cbd5e1;transition:all .25s}
+  .nc.used{background:var(--blue-soft);border-color:var(--blue);color:#1d4ed8}
+  .nc.cur{background:var(--amber-soft);border-color:var(--amber);color:#b45309;box-shadow:0 0 0 4px #fde68a}
+  .nc.skip{background:var(--red-soft);border-color:var(--red);color:var(--red);box-shadow:0 0 0 4px #fecdd3}
+  .uc{height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;font:600 11px Menlo,monospace;color:#a8a29e;background:#faf8f4}
+  .uc.t{color:#1d4ed8;background:var(--blue-soft)}
+  .ptr{font:700 12px Menlo,monospace;color:#b45309;text-align:center;height:16px}
+  .pathrow{display:flex;gap:6px;align-items:center;min-height:40px}
+  .pc{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;font:700 15px Menlo,monospace;background:var(--blue-soft);border:2px solid var(--blue);animation:pop .3s}
+  .ps{min-width:36px;height:36px;border-radius:8px;border:2px dashed #d6d3d1}
+  .rlist{display:flex;gap:6px;flex-wrap:wrap;min-height:34px}
+  .rcombo{padding:5px 9px;border-radius:8px;font:700 13px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534}
+  .rcombo.new{animation:pop .35s;box-shadow:0 0 0 4px #bbf7d0}
+  .answer{margin-top:10px;padding:8px 12px;border-radius:8px;font:700 14px Menlo,monospace;background:var(--green-soft);border:2px solid var(--green);color:#166534;animation:pop .4s;word-break:break-word}
+  @keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:scale(1);opacity:1}}
+
+  .controls{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f3f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;min-width:160px}
+  input[type=text]{font:13px Menlo,monospace;padding:7px 10px;border-radius:8px;border:1px solid var(--line);width:180px}
+  select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}
+  .stepno{font-family:Menlo,monospace;font-size:13px;color:var(--muted);min-width:80px;text-align:right}
+  .hint{font-size:12px;color:var(--muted)}
+  .preset{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>46. Permutations — Backtracking with a <code>used[]</code> array</h1>
+  <p>Fill <code>path</code> one position at a time. At each position, try <b>every</b> number that isn't <code>used</code> yet, recurse, then <b>undo</b> (pop + unmark) so the next choice starts clean. A full <code>path</code> is one permutation.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Recursion tree <span style="text-transform:none;letter-spacing:0">(each node = the number just appended to <code>path</code>)</span></h2>
+    <svg id="treeSvg"></svg>
+    <div class="legend">
+      <span class="lg-active">current call / number being chosen</span>
+      <span class="lg-stack">on the current path (call waiting)</span>
+      <span class="lg-seen">full path → appended to res</span>
+      <span class="lg-hidden">finished, undone</span>
+      <span class="lg-red">used[i] is True → continue</span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Code (your solution)</h2>
+    <pre class="code" id="code"></pre>
+    <div class="idea">
+      <b>Order matters here, so every call loops over all of <code>nums</code></b> from index 0, unlike Combinations,
+      which starts at <code>start</code>. <code>[1,2]</code> and <code>[2,1]</code> are both answers.<br>
+      <b><code>used[i]</code> stops a number from appearing twice in one path.</b> Indexes already in <code>path</code> are skipped with <code>continue</code>.<br>
+      <b>Undo in reverse order.</b> <code>path.pop()</code> and <code>used[i] = False</code> put the state back exactly as it was before choosing <code>nums[i]</code>,
+      so the next loop iteration sees a clean slate.<br>
+      <b><code>path.copy()</code></b> saves a snapshot; <code>path</code> itself keeps changing.
+    </div>
+    <div class="cx">
+      <div class="cxrow"><span class="cxk">Time</span><span class="cxv">O(n·n!)</span>
+        <span class="cxw">There are n! permutations (n = len(nums)), each copied in O(n). The tree has fewer than e·n! calls in total, and each runs an O(n) loop over <code>used</code>, so the total is still O(n·n!).</span></div>
+      <div class="cxrow"><span class="cxk">Space</span><span class="cxv">O(n)</span>
+        <span class="cxw">Extra memory is the recursion stack (n deep), <code>path</code> (≤ n) and <code>used</code> (n). The output holds n! lists of length n, so O(n·n!) if you count it.</span></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel"><h2>Call stack</h2><div class="stack" id="stack"></div></div>
+    <div class="panel">
+      <div class="sub"><code>nums</code> / <code>used</code> (loop index <code>i</code> of the top call)</div>
+      <div class="arr" id="arr"></div>
+      <div class="sub"><code>path</code></div>
+      <div class="pathrow" id="path"></div>
+      <div class="sub"><code>res</code></div>
+      <div class="rlist" id="result"></div>
+      <div id="answer"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <button id="reset" title="Reset">⏮</button>
+    <button id="prev" title="Previous (←)">◀ Prev</button>
+    <button id="play" class="primary" title="Play/Pause (space)">▶ Play</button>
+    <button id="next" title="Next (→)">Next ▶</button>
+    <input type="range" id="slider" min="0" value="0">
+    <span class="stepno" id="stepno"></span>
+    <select id="speed">
+      <option value="1600">Slow</option>
+      <option value="1000" selected>Normal</option>
+      <option value="500">Fast</option>
+    </select>
+    <span style="flex-basis:100%;height:0"></span>
+    <label class="hint">nums:</label>
+    <input type="text" id="input" value="[1,2,3]">
+    <button id="build">Run</button>
+    <span class="hint">Examples:</span>
+    <button class="preset" data-t="[1,2,3]">#1 [1,2,3] (→ 6 perms)</button>
+    <button class="preset" data-t="[0,1]">#2 [0,1] (→ [[0,1],[1,0]])</button>
+    <button class="preset" data-t="[1]">#3 [1] (→ [[1]])</button>
+    <button class="preset" data-t="[1,2,3,4]">[1,2,3,4] (→ 24, long)</button>
+    <span class="hint">· keys: ← → space</span>
+  </div>
+</div>
+
+<script>
+const CODE = [
+  `<span class="kw">class</span> <span class="ty">Solution</span>:`,
+  `    <span class="kw">def</span> <span class="fn">permute</span>(self, nums: <span class="ty">list</span>[<span class="ty">int</span>]) -> <span class="ty">list</span>[<span class="ty">list</span>[<span class="ty">int</span>]]:`,
+  `        res: <span class="ty">list</span>[<span class="ty">list</span>[<span class="ty">int</span>]] = []`,
+  `        path: <span class="ty">list</span>[<span class="ty">int</span>] = []`,
+  `        used = [<span class="bool">False</span>] * len(nums)`,
+  ``,
+  `        <span class="kw">def</span> <span class="fn">backtrack</span>() -> <span class="bool">None</span>:`,
+  `            <span class="kw">if</span> len(path) == len(nums):`,
+  `                res.append(path.copy())`,
+  `                <span class="kw">return</span>`,
+  ``,
+  `            <span class="kw">for</span> i <span class="kw">in</span> range(len(nums)):`,
+  `                <span class="kw">if</span> used[i]:`,
+  `                    <span class="kw">continue</span>`,
+  ``,
+  `                used[i] = <span class="bool">True</span>`,
+  `                path.append(nums[i])`,
+  `                backtrack()`,
+  `                path.pop()`,
+  `                used[i] = <span class="bool">False</span>`,
+  ``,
+  `        backtrack()`,
+  `        <span class="kw">return</span> res`,
+];
+const codeEl = document.getElementById('code');
+codeEl.innerHTML = CODE.map(l => `<div>${l}</div>`).join('');
+
+let nodes = [], steps = [], idx = 0, timer = null, NUMS = [], rowH = 0, R = 20;
+const fmt = a => '[' + a.join(',') + ']';
+const py = b => b ? 'True' : 'False';
+
+function parse(str) {
+  const arr = JSON.parse(str.trim().startsWith('[') ? str : '[' + str + ']');
+  if (!Array.isArray(arr) || !arr.length || arr.some(v => !Number.isInteger(v))) throw new Error('expected a non-empty list of integers');
+  if (arr.length > 4) throw new Error('use at most 4 numbers here (5 already gives 120 permutations)');
+  if (new Set(arr).size !== arr.length) throw new Error('the numbers must be distinct');
+  return arr;
+}
+
+function simulate(nums) {
+  nodes = [];
+  const n = nums.length;
+  const mk = (val, depth, parent) => {
+    const nd = {id: nodes.length, val, depth, parent, children: [], resIdx: null};
+    nodes.push(nd);
+    if (parent !== null) nodes[parent].children.push(nd.id);
+    return nd;
+  };
+  const out = [], stack = [], path = [], res = [], used = Array(n).fill(false);
+  const snap = (line, msg, extra = {}) => out.push({
+    line: [].concat(line), msg, vis: nodes.length, stack: stack.map(f => ({...f})), path: [...path],
+    used: [...used], res: res.map(r => [...r]), ...extra
+  });
+
+  const root = mk(null, 0, null);
+  snap([3, 4, 5], `<b>res = []</b>, <b>path = []</b>, <b>used = ${fmt(used.map(py))}</b>: nothing chosen yet.`);
+  snap(22, `Start the search: <b>backtrack()</b>.`);
+
+  function bt(node) {
+    const f = {node: node.id, plen: path.length, i: null, status: 'check'};
+    stack.push(f);
+    if (path.length === n) {
+      node.resIdx = res.length;
+      res.push([...path]);
+      f.status = 'saved';
+      snap([8, 9], `len(path) = ${n} == len(nums) ✓ — path is full. Save a <b>copy</b>: res.append(${fmt(path)}). That's permutation #${res.length}.`, {appended: res.length - 1});
+      snap(10, `<b>return</b> to the caller, which will undo its last choice (${path[path.length - 1]}).`);
+      stack.pop();
+      return;
+    }
+    snap(8, `<b>backtrack()</b> with path = <b>${fmt(path)}</b>: len(path) = ${path.length} &lt; ${n}, so fill position <b>${path.length}</b>. Loop over every index i = 0..${n - 1}.`);
+    f.status = 'loop';
+    for (let i = 0; i < n; i++) {
+      f.i = i;
+      if (used[i]) {
+        snap([12, 13, 14], `i = ${i}: <b>used[${i}] is True</b> — ${nums[i]} is already in path ${fmt(path)} → <b>continue</b>.`, {skip: {parent: node.id, i}});
+        continue;
+      }
+      used[i] = true;
+      const child = mk(nums[i], path.length + 1, node.id);
+      path.push(nums[i]);
+      snap([16, 17], `i = ${i}: used[${i}] is False → choose it. <b>used[${i}] = True</b>, path.append(${nums[i]}) → path = <b>${fmt(path)}</b>.`, {focus: child.id, cur: i});
+      snap(18, `Recurse: <b>backtrack()</b> to fill position ${path.length}.`, {focus: child.id, cur: i});
+      bt(child);
+      path.pop();
+      used[i] = false;
+      snap([19, 20], `Back at position ${path.length}. Undo: path.pop() removes <b>${nums[i]}</b>, <b>used[${i}] = False</b> → path = <b>${fmt(path)}</b>.` +
+        (i < n - 1 ? ' Try the next index.' : ' That was the last index, so this call <b>returns</b>.'), {cur: i});
+    }
+    f.i = null;
+    stack.pop();
+  }
+
+  bt(root);
+  snap(23, `Search finished. Return <b>${res.length}</b> permutation${res.length === 1 ? '' : 's'}: <b>${res.map(fmt).join(', ')}</b>.`, {final: true});
+  return out;
+}
+
+const W = 640, H = 380, PADY = 40, LEFT = 86, RIGHT = 24;
+function layout() {
+  let x = 0;
+  (function place(id) {
+    const nd = nodes[id];
+    if (!nd.children.length) nd.x = x++;
+    else { nd.children.forEach(place); nd.x = (nodes[nd.children[0]].x + nodes[nd.children[nd.children.length - 1]].x) / 2; }
+  })(0);
+  const D = NUMS.length;
+  const colW = x <= 1 ? 0 : (W - LEFT - RIGHT) / (x - 1);
+  rowH = D === 0 ? 0 : (H - PADY - 46) / D;
+  R = Math.max(9, Math.min(20, colW ? colW * 0.42 : 20, rowH * 0.32));
+  nodes.forEach(nd => {
+    nd.px = x <= 1 ? (LEFT + W - RIGHT) / 2 : LEFT + nd.x * colW;
+    nd.py = PADY + nd.depth * rowH;
+  });
+  document.getElementById('treeSvg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+}
+
+function render() {
+  const s = steps[idx];
+  [...codeEl.children].forEach((d, k) => d.classList.toggle('hl', s.line.includes(k + 1)));
+  document.getElementById('msg').innerHTML = s.msg;
+
+  const onStack = new Set(s.stack.map(f => f.node));
+  const top = s.stack[s.stack.length - 1];
+  const active = s.focus !== undefined ? s.focus : (top ? top.node : null);
+  const curDepth = active !== null ? nodes[active].depth : null;
+
+  let html = '';
+  for (let d = 0; d <= NUMS.length; d++) {
+    const y = PADY + d * rowH, cur = curDepth === d && !s.final;
+    html += `<rect class="band ${cur ? 'cur' : ''}" x="4" y="${y - Math.min(26, rowH / 2)}" width="${W - 8}" height="${Math.min(52, rowH)}" rx="10"/>`;
+    html += `<text class="bandlabel ${cur ? 'cur' : ''}" x="10" y="${y + 4}">len(path)=${d}</text>`;
+  }
+  const shown = nodes.filter(nd => nd.id < s.vis);
+  shown.forEach(nd => {
+    if (nd.parent === null) return;
+    const p = nodes[nd.parent];
+    const on = onStack.has(p.id) && (onStack.has(nd.id) || nd.id === active);
+    html += `<line class="edge ${on ? 'on' : ''}" x1="${p.px}" y1="${p.py}" x2="${nd.px}" y2="${nd.py}"/>`;
+  });
+  const fs = Math.max(10, Math.min(17, R * 0.85));
+  // transient ghost for a skipped index
+  let ghost = '';
+  if (s.skip) {
+    const p = nodes[s.skip.parent];
+    const gx = Math.min(W - 20, p.px + 34), gy = p.py + rowH * 0.5;
+    html += `<line class="edge skip" x1="${p.px}" y1="${p.py}" x2="${gx}" y2="${gy}"/>`;
+    ghost = `<g class="node skip"><circle cx="${gx}" cy="${gy}" r="${Math.max(11, R * 0.75)}"/><text x="${gx}" y="${gy}" font-size="${fs * 0.85}">${NUMS[s.skip.i]}</text></g>` +
+      `<text x="${gx}" y="${gy + Math.max(11, R * 0.75) + 12}" text-anchor="middle" font-size="11" fill="#e11d48">used ✗</text>`;
+  }
+  shown.forEach(nd => {
+    let cls = 'done';
+    if (nd.id === active && !s.final) cls = 'active';
+    else if (nd.resIdx !== null && nd.resIdx < s.res.length) cls = 'found';
+    else if (onStack.has(nd.id) || nd.id === s.focus) cls = 'onstack';
+    const label = nd.parent === null ? '[ ]' : nd.val;
+    html += `<g class="node ${cls}"><circle cx="${nd.px}" cy="${nd.py}" r="${R}"/><text x="${nd.px}" y="${nd.py}" font-size="${nd.parent === null ? fs * 0.8 : fs}">${label}</text></g>`;
+    if (cls === 'found' && NUMS.length <= 3) html += `<text class="combo" x="${nd.px}" y="${nd.py + R + 13}">${fmt(s.res[nd.resIdx])}</text>`;
+  });
+  html += ghost;
+  document.getElementById('treeSvg').innerHTML = html;
+
+  // call stack
+  document.getElementById('stack').innerHTML = s.stack.length
+    ? s.stack.map((f, k) => {
+        const p = s.path.slice(0, f.plen);
+        const st = f.status === 'saved' ? '<span class="ok">saved ✓</span>'
+          : f.i !== null ? `<span class="run">i=${f.i} …</span>` : 'check len';
+        return `<div class="frame ${k === s.stack.length - 1 ? 'top' : ''}"><span>backtrack()  path=${fmt(p)}</span><span class="st">${st}</span></div>`;
+      }).join('')
+    : '<span class="empty">no active calls</span>';
+
+  // nums / used
+  const arr = document.getElementById('arr');
+  arr.style.setProperty('--n', NUMS.length);
+  const ptrI = s.skip ? s.skip.i : s.cur !== undefined ? s.cur : (top && top.i !== null ? top.i : null);
+  let ah = '<span></span>' + NUMS.map((_, i) => `<span class="ptr">${ptrI === i && !s.final ? 'i ↓' : ''}</span>`).join('');
+  ah += '<span class="rl">nums</span>' + NUMS.map((v, i) => {
+    let c = s.used[i] ? 'used' : '';
+    if (s.skip && s.skip.i === i) c = 'skip';
+    else if (s.cur === i && s.focus !== undefined) c = 'cur';
+    return `<div class="nc ${c}">${v}</div>`;
+  }).join('');
+  ah += '<span class="rl">used</span>' + s.used.map(u => `<div class="uc ${u ? 't' : ''}">${py(u)}</div>`).join('');
+  ah += '<span></span>' + NUMS.map((_, i) => `<span class="ix">[${i}]</span>`).join('');
+  arr.innerHTML = ah;
+
+  // path
+  let ph = s.path.map(v => `<div class="pc">${v}</div>`).join('');
+  for (let j = s.path.length; j < NUMS.length; j++) ph += '<div class="ps"></div>';
+  document.getElementById('path').innerHTML = ph;
+
+  // res
+  document.getElementById('result').innerHTML = s.res.length
+    ? s.res.map((r, j) => `<span class="rcombo ${s.appended === j ? 'new' : ''}">${fmt(r)}</span>`).join('')
+    : '<span class="empty">[]</span>';
+  document.getElementById('answer').innerHTML = s.final ? `<div class="answer">return [${s.res.map(fmt).join(',')}]</div>` : '';
+
+  document.getElementById('slider').value = idx;
+  document.getElementById('stepno').textContent = `${idx + 1} / ${steps.length}`;
+}
+
+function go(k) { idx = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+function stop() { clearInterval(timer); timer = null; document.getElementById('play').textContent = '▶ Play'; }
+function play() {
+  if (idx >= steps.length - 1) go(0);
+  document.getElementById('play').textContent = '⏸ Pause';
+  timer = setInterval(() => { if (idx >= steps.length - 1) stop(); else go(idx + 1); }, +document.getElementById('speed').value);
+}
+function load() {
+  stop();
+  let nums;
+  try { nums = parse(document.getElementById('input').value); }
+  catch (e) {
+    document.getElementById('msg').innerHTML = `<b style="color:var(--red)">Couldn't read the input:</b> ${e.message}. Use the form <code>[1,2,3]</code>.`;
+    return;
+  }
+  NUMS = nums;
+  steps = simulate(nums);
+  layout();
+  document.getElementById('slider').max = steps.length - 1;
+  go(0);
+}
+
+document.getElementById('prev').onclick = () => { stop(); go(idx - 1); };
+document.getElementById('next').onclick = () => { stop(); go(idx + 1); };
+document.getElementById('reset').onclick = () => { stop(); go(0); };
+document.getElementById('play').onclick = () => timer ? stop() : play();
+document.getElementById('slider').oninput = e => { stop(); go(+e.target.value); };
+document.getElementById('speed').onchange = () => { if (timer) { stop(); play(); } };
+document.getElementById('build').onclick = load;
+document.querySelectorAll('.preset').forEach(b => b.onclick = () => { document.getElementById('input').value = b.dataset.t; load(); });
+document.getElementById('input').onkeydown = e => { if (e.key === 'Enter') load(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if (e.key === 'ArrowRight') { stop(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft') { stop(); go(idx - 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+load();
+</script>
+</body>
+</html>
